@@ -117,10 +117,12 @@ import {
 } from "chatpack-expo-ui";
 import { chat } from "./lib/chat";
 
-const isTurnAnchor = (m) => m.senderId === "me"; // pass the SAME function to both spots below
+const isTurnAnchor = (m) => m.senderId === "me"; // defined once, given to MessageScrollerProvider below
 
 function MessageRow({ message, previousMessage, nextMessage, isAnchor }: MessageItemProps) {
   const [actionsOpen, setActionsOpen] = useState(false);
+  // isAnchor is MessageScroller's own isTurnAnchor result for this row, forwarded here —
+  // not recomputed. See MessageScrollerItem's scrollAnchor doc comment for why that matters.
   return (
     <MessageScrollerItem messageId={message.id} scrollAnchor={isAnchor}>
       {isDifferentCalendarDay(previousMessage, message) && (
@@ -177,7 +179,7 @@ re-exports before copying this verbatim.
 | --- | --- |
 | `MessageScrollerProvider` | Same name. Computes turn anchors once from `isTurnAnchor` over the full `messages` array (see platform-difference note on `MessageScrollerItem` below); owns the `FlashListRef` bridge and two `useSyncExternalStore`-backed stores (visibility, scrollable-edges) so scroll updates never re-render the transcript. |
 | `MessageScroller` / `MessageScrollerViewport` / `MessageScrollerContent` | `MessageScroller` (the three web parts collapse into one — FlashList owns its virtualized content directly, with no separable inner node to wrap independently). |
-| `MessageScrollerItem` | Same name, same prop shape (`messageId`, `scrollAnchor`) — but presentational only in this port; see its own doc comment for why (FlashList recycling vs. persistent DOM nodes). |
+| `MessageScrollerItem` | Same name, same prop shape (`messageId`, `scrollAnchor`) — but presentational only in this port; see its own doc comment for why (FlashList recycling vs. persistent DOM nodes). Forward `MessageItemProps.isAnchor` into `scrollAnchor` rather than recomputing your `isTurnAnchor` predicate per row — `MessageScroller` already evaluated it once. |
 | `MessageScrollerButton` | Same name. Goes inert (`accessibilityState.disabled` + `pointerEvents:none`) when nothing to scroll toward, via `useMessageScrollerScrollable`. Swappable through `MessageScroller`'s `ButtonComponent` prop. |
 | `useMessageScroller` / `useMessageScrollerVisibility` / `useMessageScrollerScrollable` | Same names, same shapes (`scrollToMessage`/`scrollToEnd`/`scrollToStart`; `currentAnchorId`/`visibleMessageIds`; `{start, end}`). `scrollToMessage` never needs to "queue" a not-yet-mounted target — FlashList scrolls against the full data array regardless of what's currently rendered. |
 | `Message` (compound: `Avatar`/`Header`/`Content`/`Footer`/`Group`) | Same names. `Message.Avatar` offsets itself by `Message.Footer`'s *measured* height (`onLayout`, not a guessed constant) to stay aligned with the bubble instead of the footer, and renders invisible-but-space-reserving on non-last rows of a group. |
@@ -211,6 +213,9 @@ A few things don't (and can't) carry over 1:1 from DOM/ARIA to RN:
 - **`MessageScrollerItem`'s `scrollAnchor` prop is presentational only** —
   see its own doc comment for the FlashList-recycling reason the real
   anchor list lives on `MessageScrollerProvider`'s `isTurnAnchor` instead.
+  Forward `MessageItemProps.isAnchor` into it (see the usage example above)
+  rather than calling your own predicate a second time per row — one
+  evaluation, one place it can disagree with itself.
 
 ## Everything here is meant to be edited, not just configured
 

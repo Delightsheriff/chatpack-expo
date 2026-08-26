@@ -17,9 +17,20 @@ export interface MessageScrollerItemProps {
    * `MessageScrollerProvider`'s `isTurnAnchor` predicate evaluated over
    * the full `messages` array — this prop is purely presentational (it
    * currently just adds a touch of extra top spacing, overridable via
-   * `style`). Pass the *same* predicate result to both places — one
-   * function, called from two spots — rather than maintaining this and
-   * `isTurnAnchor` as independent sources of truth.
+   * `style`).
+   *
+   * Pass `isAnchor` straight through — `MessageScroller` already evaluated
+   * `isTurnAnchor` for this row and handed it to your `ItemComponent` via
+   * `MessageItemProps.isAnchor`:
+   *
+   * ```tsx
+   * function Row({ message, isAnchor }: MessageItemProps) {
+   *   return <MessageScrollerItem messageId={message.id} scrollAnchor={isAnchor}>...
+   * ```
+   *
+   * Don't call your own turn-anchor predicate again here — that would be
+   * the same fact computed twice, with nothing keeping the two copies in
+   * sync if the predicate ever changes.
    */
   scrollAnchor?: boolean;
   children: ReactNode;
