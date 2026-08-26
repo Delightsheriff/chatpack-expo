@@ -1,31 +1,53 @@
 import { Message as MessageRoot } from "./Message";
+import { MessageAvatar } from "./MessageAvatar";
+import { MessageHeader } from "./MessageHeader";
+import { MessageContent } from "./MessageContent";
+import { MessageFooter } from "./MessageFooter";
+import { MessageGroup } from "./MessageGroup";
 import { Bubble } from "./Bubble";
 import { BubbleReactions } from "./BubbleReactions";
 import { Attachment } from "./Attachment";
 import { MessageQuickReactions } from "./QuickReactions";
 
 /**
- * `<Message>` as a compound namespace — `Message.Bubble`,
- * `Message.Attachment`, `Message.QuickReactions` — so a consumer composes
- * a row explicitly:
+ * `<Message>` as a compound namespace, mirroring shadcn's composition tree:
  *
  * ```tsx
  * <Message message={m} previousMessage={prev} nextMessage={next}>
- *   <Message.Bubble onLongPress={() => setReacting(true)} />
- *   <Message.QuickReactions isVisible={reacting} onDismiss={() => setReacting(false)} />
+ *   <Message.Avatar><Avatar uri={sender.avatarUrl} /></Message.Avatar>
+ *   <Message.Content>
+ *     <Message.Header>{sender.name}</Message.Header>
+ *     <Message.Bubble />
+ *     <Message.Footer><ReadReceipt status="read" /></Message.Footer>
+ *   </Message.Content>
  * </Message>
  * ```
  *
  * Each piece is also a plain named export below, for a consumer that wants
- * `Bubble` on its own without the namespace.
+ * one on its own without the namespace.
  */
 export const Message = Object.assign(MessageRoot, {
+  Avatar: MessageAvatar,
+  Header: MessageHeader,
+  Content: MessageContent,
+  Footer: MessageFooter,
+  Group: MessageGroup,
   Bubble,
   BubbleReactions,
   Attachment,
   QuickReactions: MessageQuickReactions,
 });
 
+export { MessageAvatar } from "./MessageAvatar";
+export type { MessageAvatarProps } from "./MessageAvatar";
+export { MessageHeader } from "./MessageHeader";
+export type { MessageHeaderProps } from "./MessageHeader";
+export { MessageContent } from "./MessageContent";
+export type { MessageContentProps } from "./MessageContent";
+export { MessageFooter } from "./MessageFooter";
+export type { MessageFooterProps } from "./MessageFooter";
+export { MessageGroup } from "./MessageGroup";
+export type { MessageGroupProps } from "./MessageGroup";
 export { Bubble } from "./Bubble";
 export type { BubbleProps, BubbleVariant, BubbleAlign } from "./Bubble";
 export { BubbleReactions } from "./BubbleReactions";
@@ -34,6 +56,6 @@ export { Attachment, attachmentsFromMetadata } from "./Attachment";
 export type { AttachmentProps, ChatAttachment } from "./Attachment";
 export { MessageQuickReactions } from "./QuickReactions";
 export type { MessageQuickReactionsProps } from "./QuickReactions";
-export type { MessageProps } from "./Message";
+export type { MessageProps, MessageAlign } from "./Message";
 export { useMessageContext } from "./context";
 export type { MessageContextValue } from "./context";

@@ -77,11 +77,11 @@ function isReactionsChild(child: ReactNode): boolean {
  */
 export function Bubble({ variant, align, children, onLongPress, style, className }: BubbleProps) {
   const { state } = useChatUI();
-  const { message, isOwn, groupedWithPrevious, groupedWithNext } = useMessageContext();
+  const { message, isOwn, align: contextAlign, groupedWithPrevious, groupedWithNext } = useMessageContext();
   const { radius, spacing, typography } = state.theme;
 
   const resolvedVariant: BubbleVariant = variant ?? (message.role === "system" ? "muted" : isOwn ? "default" : "secondary");
-  const resolvedAlign: BubbleAlign = align ?? (isOwn ? "end" : "start");
+  const resolvedAlign: BubbleAlign = align ?? contextAlign;
   const { background, foreground, border } = bubbleColors(state.theme, resolvedVariant);
   const isGhost = resolvedVariant === "ghost";
 

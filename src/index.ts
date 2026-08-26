@@ -6,6 +6,11 @@ export type { ChatTheme, ChatColors, ChatSpacing, ChatRadius, ChatTypography } f
 
 export {
   Message,
+  MessageAvatar,
+  MessageHeader,
+  MessageContent,
+  MessageFooter,
+  MessageGroup,
   Bubble,
   BubbleReactions,
   Attachment,
@@ -15,6 +20,12 @@ export {
 } from "./components/message";
 export type {
   MessageProps,
+  MessageAlign,
+  MessageAvatarProps,
+  MessageHeaderProps,
+  MessageContentProps,
+  MessageFooterProps,
+  MessageGroupProps,
   BubbleProps,
   BubbleVariant,
   BubbleAlign,

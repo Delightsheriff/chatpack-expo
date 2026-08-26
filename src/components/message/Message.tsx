@@ -1,9 +1,12 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, useCallback, type ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import type { ClientMessage } from "@chatpack/client";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { isSameGroup } from "../../utils/grouping";
-import { MessageContext } from "./context";
+import { MessageContext, type MessageAlign } from "./context";
+import { MessageAvatarAlignmentContext } from "./avatar-alignment";
+
+export type { MessageAlign };
 
 export interface MessageProps {
   message: ClientMessage;
@@ -12,62 +15,74 @@ export interface MessageProps {
   nextMessage?: ClientMessage;
   /** Grouping window override; see `isSameGroup`. */
   groupingWindowMs?: number;
+  /** Defaults to derived from `isOwn` (`"end"` for your own messages) — override for group-chat cases where alignment isn't purely ownership. */
+  align?: MessageAlign;
   /**
-   * `Bubble`, `Attachment`, `Marker`, or any custom child — this root only
-   * lays out the row (avatar slot + content column) and provides context;
-   * it renders nothing about the message itself, so swapping in a
-   * different bubble implementation never requires forking this file.
+   * `MessageAvatar` + `MessageContent` (which itself holds
+   * `MessageHeader`/`Bubble`/`MessageFooter`) — this root only lays out the
+   * row and provides context; it renders nothing about the message itself.
    */
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
-  /** Forwarded to the row's `View` for NativeWind (or any Tailwind-in-RN setup); harmless unknown prop if you're not using one. */
   className?: string;
 }
 
 /**
- * Row root for one message: computes ownership/grouping once and provides
- * it via context to `Message.Bubble` / `Message.Attachment`, mirroring
- * shadcn's `Message` (avatar + alignment + grouped-message layout) —
- * `architecture-compound-components`, so a consumer composes
- * `<Message><Message.Bubble/></Message>` rather than configuring one
- * component with a dozen booleans.
+ * Row root for one message — corresponds to shadcn's `Message`. Computes
+ * ownership/grouping once and provides it via context to
+ * `MessageAvatar`/`Bubble`/`MessageFooter`, so a consumer composes
+ * `<Message><MessageAvatar/><MessageContent>...</MessageContent></Message>`
+ * rather than configuring one component with a dozen booleans
+ * (`architecture-compound-components`).
  */
 export function Message({
   message,
   previousMessage,
   nextMessage,
   groupingWindowMs,
+  align,
   children,
   style,
   className,
 }: MessageProps) {
   const { state } = useChatUI();
   const isOwn = message.senderId === state.currentUserId;
+  const resolvedAlign: MessageAlign = align ?? (isOwn ? "end" : "start");
+
+  const [footerHeight, setFooterHeight] = useState(0);
+  const reportFooterHeight = useCallback((height: number) => setFooterHeight(height), []);
+  const avatarAlignmentValue = useMemo(() => ({ footerHeight, reportFooterHeight }), [footerHeight, reportFooterHeight]);
 
   const contextValue = useMemo(
     () => ({
       message,
       isOwn,
+      align: resolvedAlign,
       groupedWithPrevious: isSameGroup(previousMessage, message, groupingWindowMs),
       groupedWithNext: isSameGroup(message, nextMessage, groupingWindowMs),
     }),
-    [message, isOwn, previousMessage, nextMessage, groupingWindowMs],
+    [message, isOwn, resolvedAlign, previousMessage, nextMessage, groupingWindowMs],
   );
 
   return (
     <MessageContext.Provider value={contextValue}>
-      <View
-        style={[
-          styles.row,
-          { justifyContent: isOwn ? "flex-end" : "flex-start" },
-          contextValue.groupedWithPrevious ? styles.tightTop : styles.spacedTop,
-          style,
-        ]}
-        // @ts-expect-error forwarded for NativeWind's cssInterop when the host app has the babel/metro transform active; harmless unknown prop otherwise.
-        className={className}
-      >
-        {children}
-      </View>
+      <MessageAvatarAlignmentContext.Provider value={avatarAlignmentValue}>
+        <View
+          style={[
+            styles.row,
+            {
+              flexDirection: resolvedAlign === "end" ? "row-reverse" : "row",
+              justifyContent: resolvedAlign === "end" ? "flex-end" : "flex-start",
+            },
+            contextValue.groupedWithPrevious ? styles.tightTop : styles.spacedTop,
+            style,
+          ]}
+          // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+          className={className}
+        >
+          {children}
+        </View>
+      </MessageAvatarAlignmentContext.Provider>
     </MessageContext.Provider>
   );
 }
@@ -75,7 +90,9 @@ export function Message({
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
+    alignItems: "flex-end",
     paddingHorizontal: 12,
+    gap: 8,
   },
   spacedTop: {
     marginTop: 12,
