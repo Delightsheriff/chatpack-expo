@@ -11,7 +11,8 @@ import Animated, {
 
 export interface ShimmerTextProps {
   children: string;
-  style?: StyleProp<TextStyle>;
+  style?: StyleProp<TextStyle> | undefined;
+  className?: string | undefined;
   testID?: string;
 }
 
@@ -20,7 +21,7 @@ export interface ShimmerTextProps {
  * "Connecting…"). Animates `opacity` only — never layout or color
  * properties — so it stays on the UI thread (`animation-gpu-properties`).
  */
-export function ShimmerText({ children, style, testID }: ShimmerTextProps) {
+export function ShimmerText({ children, style, className, testID }: ShimmerTextProps) {
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -37,7 +38,12 @@ export function ShimmerText({ children, style, testID }: ShimmerTextProps) {
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
-    <Animated.Text testID={testID} style={[animatedStyle, style]}>
+    <Animated.Text
+      testID={testID}
+      style={[animatedStyle, style]}
+      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+      className={className}
+    >
       {children}
     </Animated.Text>
   );

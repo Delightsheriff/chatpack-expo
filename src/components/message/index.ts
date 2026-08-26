@@ -6,7 +6,7 @@ import { MessageFooter } from "./MessageFooter";
 import { MessageGroup } from "./MessageGroup";
 import { Bubble } from "./Bubble";
 import { BubbleReactions } from "./BubbleReactions";
-import { Attachment } from "./Attachment";
+import { Attachment } from "../attachment";
 import { MessageQuickReactions } from "./QuickReactions";
 
 /**
@@ -52,8 +52,8 @@ export { Bubble } from "./Bubble";
 export type { BubbleProps, BubbleVariant, BubbleAlign } from "./Bubble";
 export { BubbleReactions } from "./BubbleReactions";
 export type { BubbleReactionsProps, BubbleReactionsSide, BubbleReactionsAlign } from "./BubbleReactions";
-export { Attachment, attachmentsFromMetadata } from "./Attachment";
-export type { AttachmentProps, ChatAttachment } from "./Attachment";
+export { Attachment, attachmentsFromMetadata } from "../attachment";
+export type { AttachmentProps, ChatAttachment } from "../attachment";
 export { MessageQuickReactions } from "./QuickReactions";
 export type { MessageQuickReactionsProps } from "./QuickReactions";
 export type { MessageProps, MessageAlign } from "./Message";

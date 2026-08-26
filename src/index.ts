@@ -13,8 +13,6 @@ export {
   MessageGroup,
   Bubble,
   BubbleReactions,
-  Attachment,
-  attachmentsFromMetadata,
   MessageQuickReactions,
   useMessageContext,
 } from "./components/message";
@@ -32,11 +30,38 @@ export type {
   BubbleReactionsProps,
   BubbleReactionsSide,
   BubbleReactionsAlign,
-  AttachmentProps,
-  ChatAttachment,
   MessageQuickReactionsProps,
   MessageContextValue,
 } from "./components/message";
+
+export {
+  Attachment,
+  AttachmentMedia,
+  AttachmentContent,
+  AttachmentTitle,
+  AttachmentDescription,
+  AttachmentActions,
+  AttachmentAction,
+  AttachmentGroup,
+  attachmentsFromMetadata,
+} from "./components/attachment";
+export type {
+  AttachmentProps,
+  AttachmentMediaProps,
+  AttachmentContentProps,
+  AttachmentTitleProps,
+  AttachmentDescriptionProps,
+  AttachmentActionsProps,
+  AttachmentActionProps,
+  AttachmentGroupProps,
+  AttachmentState,
+  AttachmentSize,
+  AttachmentOrientation,
+  ChatAttachment,
+} from "./components/attachment";
+
+export { ScrollFade } from "./utils/ScrollFade";
+export type { ScrollFadeProps } from "./utils/ScrollFade";
 
 export { MessageScroller } from "./components/MessageScroller";
 export type { MessageScrollerProps, MessageItemProps, ScrollToLatestButtonProps } from "./components/MessageScroller";

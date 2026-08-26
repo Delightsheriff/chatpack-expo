@@ -16,6 +16,7 @@ export default defineConfig({
     "@expo/ui",
     "@shopify/flash-list",
     "expo-image",
+    "expo-linear-gradient",
     "nativewind",
     "react-native-gesture-handler",
     "react-native-reanimated",
