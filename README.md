@@ -86,4 +86,4 @@ Chatpack's own docs are explicit that this hook has **no retries and no delivery
 
 ## Status
 
-Unpublished — first pass, not yet run against a live Chatpack backend end-to-end. The SSE parsing/reconnect/Last-Event-ID logic has unit test coverage (`npm test`); the auth-header wiring and AppState lifecycle have not been exercised against a real app yet. Treat this as a working draft to validate against your actual backend before depending on it.
+Unpublished. Verified end-to-end against a live Chatpack backend (`@chatpack/core` + `adapter-memory`) running in a real Expo/RN runtime (iOS Simulator, Expo Go): REST, SSE realtime, auth-header wiring on both the REST and SSE channels, and the AppState connect/disconnect/reconnect lifecycle all confirmed working. The SSE parsing/reconnect/Last-Event-ID logic also has unit test coverage (`npm test`).

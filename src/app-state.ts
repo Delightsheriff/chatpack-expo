@@ -19,6 +19,14 @@ import { AppState, type AppStateStatus } from "react-native";
 export interface RealtimeLifecycle {
   connect(): void;
   disconnect(): void;
+  /**
+   * Runs one polling refresh immediately, independent of realtime mode
+   * (`ChatRealtime.pollNow` on the real client). Optional here only so a
+   * minimal test double can omit it — the real `chat.realtime` always has
+   * it, and this module calls it on every foreground transition. See the
+   * comment above `handleChange` for why that call exists.
+   */
+  pollNow?(): Promise<void>;
 }
 
 export interface AttachAppStateLifecycleOptions {
@@ -62,6 +70,20 @@ export function attachAppStateRealtimeLifecycle(
     if (next === "active" && previous !== "active") {
       clearPendingDisconnect();
       client.connect();
+      // `disconnect()`/`connect()` tear down and rebuild the whole
+      // EventSource (a fresh `options.eventSource(...)` factory call, per
+      // `event-source.ts`), which starts it with no `Last-Event-ID` — so
+      // chatpack's own gap-fill (which resumes an in-place reconnect, e.g.
+      // after a network blip) has nothing to resume *from* here. Without
+      // this, anything sent while backgrounded is silently missing until
+      // the host does something else that refetches (remount, pull to
+      // refresh). `pollNow()` runs chatpack's own REST catch-up — the same
+      // request `mode: "poll"` uses — so it folds in whatever the stream
+      // reconnect alone would have dropped. Fire-and-forget: chatpack
+      // swallows per-request failures inside it already (a failed catch-up
+      // here just means the next poll tick or realtime event catches up
+      // instead).
+      void client.pollNow?.();
       return;
     }
 

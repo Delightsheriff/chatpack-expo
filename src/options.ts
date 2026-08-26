@@ -31,10 +31,44 @@ export interface ExpoChatClientOptions<
   debugRealtime?: boolean;
 }
 
+/**
+ * `@chatpack/client`'s request layer unconditionally reads
+ * `window.location.origin` as the base argument to `new URL(url, base)` —
+ * guarded only by `typeof window === "undefined"`, not by whether
+ * `window.location` itself exists (`packages/client/src/request.ts`). RN
+ * (Hermes, and Expo's own polyfills) defines a global `window` — usually as
+ * an alias for `globalThis` — but that object has no `location`, so the
+ * client throws `TypeError: Cannot read property 'origin' of undefined` on
+ * *every* REST call, even though `baseURL` is always absolute here and the
+ * base argument would otherwise be discarded by `URL`'s own parser.
+ *
+ * Requiring an absolute `baseURL` (see `ExpoChatClientOptions.baseURL`)
+ * doesn't avoid this — the crash happens while *constructing* the argument,
+ * before `URL` ever gets to ignore it. This fills in a minimal
+ * `window.location.origin` derived from `baseURL` so that read succeeds.
+ * Never overwrites an existing `location` (e.g. a test environment or a
+ * future RN runtime that legitimately provides one), and does nothing if
+ * `window` itself doesn't exist — `@chatpack/client`'s own fallback branch
+ * already handles that case correctly.
+ */
+function ensureWindowLocationOrigin(baseURL: string): void {
+  const target = globalThis as { window?: { location?: unknown } };
+  if (typeof target.window === "undefined" || target.window === null) return;
+  if (target.window.location !== undefined) return;
+  try {
+    const origin = new URL(baseURL).origin;
+    (target.window as { location?: unknown }).location = { origin };
+  } catch {
+    // Malformed baseURL — leave it for @chatpack/client's own validation
+    // (or the eventual fetch failure) to report.
+  }
+}
+
 export function resolveExpoOptions<Plugins extends readonly ChatClientPlugin[]>(
   options: ExpoChatClientOptions<Plugins>,
 ): ChatClientOptions<Plugins> {
   const { getAuthHeaders, debugRealtime, headers, ...rest } = options;
+  ensureWindowLocationOrigin(options.baseURL);
   const resolvedHeaders = headers ?? (getAuthHeaders ? () => getAuthHeaders() : undefined);
   return {
     ...rest,
