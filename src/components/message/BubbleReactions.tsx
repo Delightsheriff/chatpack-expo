@@ -16,26 +16,28 @@ export interface BubbleReactionsProps {
 
 /**
  * An overlapping reaction/quick-action row anchored to one edge of the
- * enclosing `Bubble` — `Bubble` detects this as a child by
- * `displayName` and renders it as a sibling positioned over the bubble
- * edge, rather than as ordinary bubble content, matching shadcn's model.
+ * enclosing `Bubble` — pass it to `Bubble`'s `reactions` prop, which
+ * renders it as a sibling positioned over the bubble edge instead of as
+ * ordinary content, matching shadcn's model.
  *
  * Purely presentational, same as shadcn's version — build the row's
  * contents from `message.reactions` yourself (it's a plain
  * `ReactionSummary[]`, no transform needed):
  *
  * ```tsx
- * <Bubble>
- *   {message.reactions.length > 0 && (
- *     <BubbleReactions>
- *       {message.reactions.map((r) => (
- *         <Pressable key={r.emoji} onPress={() => onReact(message.id, r.emoji)}>
- *           <Text>{r.emoji} {r.count}</Text>
- *         </Pressable>
- *       ))}
- *     </BubbleReactions>
- *   )}
- * </Bubble>
+ * <Bubble
+ *   reactions={
+ *     message.reactions.length > 0 && (
+ *       <BubbleReactions>
+ *         {message.reactions.map((r) => (
+ *           <Pressable key={r.emoji} onPress={() => onReact(message.id, r.emoji)}>
+ *             <Text>{r.emoji} {r.count}</Text>
+ *           </Pressable>
+ *         ))}
+ *       </BubbleReactions>
+ *     )
+ *   }
+ * />
  * ```
  */
 export function BubbleReactions({ side = "bottom", align = "end", children, style, className }: BubbleReactionsProps) {
@@ -58,8 +60,6 @@ export function BubbleReactions({ side = "bottom", align = "end", children, styl
     </View>
   );
 }
-
-BubbleReactions.displayName = "BubbleReactions";
 
 const styles = StyleSheet.create({
   row: {

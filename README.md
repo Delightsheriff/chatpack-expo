@@ -57,8 +57,7 @@ ChatUIProvider
                     ├── Message.Avatar
                     └── Message.Content
                         ├── Message.Header
-                        ├── Message.Bubble
-                        │   └── Message.BubbleReactions
+                        ├── Message.Bubble (reactions={<Message.BubbleReactions/>})
                         ├── Message.Attachment (Media/Content/Title/Description/Actions)
                         └── Message.Footer
                             └── ReadReceipt
@@ -183,7 +182,7 @@ re-exports before copying this verbatim.
 | `MessageScrollerButton` | Same name. Goes inert (`accessibilityState.disabled` + `pointerEvents:none`) when nothing to scroll toward, via `useMessageScrollerScrollable`. Swappable through `MessageScroller`'s `ButtonComponent` prop. |
 | `useMessageScroller` / `useMessageScrollerVisibility` / `useMessageScrollerScrollable` | Same names, same shapes (`scrollToMessage`/`scrollToEnd`/`scrollToStart`; `currentAnchorId`/`visibleMessageIds`; `{start, end}`). `scrollToMessage` never needs to "queue" a not-yet-mounted target — FlashList scrolls against the full data array regardless of what's currently rendered. |
 | `Message` (compound: `Avatar`/`Header`/`Content`/`Footer`/`Group`) | Same names. `Message.Avatar` offsets itself by `Message.Footer`'s *measured* height (`onLayout`, not a guessed constant) to stay aligned with the bubble instead of the footer, and renders invisible-but-space-reserving on non-last rows of a group. |
-| `Bubble` (7 variants, `BubbleReactions`, `BubbleGroup`) | `Message.Bubble` / `Bubble`. All 7 variants (`default`/`secondary`/`muted`/`tinted`/`outline`/`ghost`/`destructive`). `BubbleReactions` is a child detected by `displayName`, not auto-populated — build it from `message.reactions` yourself (plain data, no transform needed). No separate `BubbleGroup`: grouping is already computed per-`Message` from `previousMessage`/`nextMessage`. |
+| `Bubble` (7 variants, `BubbleReactions`, `BubbleGroup`) | `Message.Bubble` / `Bubble`. All 7 variants (`default`/`secondary`/`muted`/`tinted`/`outline`/`ghost`/`destructive`). `BubbleReactions` is passed via an explicit `reactions` prop, not auto-detected from `children` — build it from `message.reactions` yourself (plain data, no transform needed). No separate `BubbleGroup`: grouping is already computed per-`Message` from `previousMessage`/`nextMessage`. |
 | `Attachment` (state/size/orientation, `Media`/`Content`/`Title`/`Description`/`Actions`/`Group`) | Same shape, minus a separate `AttachmentTrigger` — RN's nested-`Pressable` touch handling doesn't have the DOM stacking-order problem a full-card link has over its own action buttons, so `Attachment`'s own `onPress` covers it. `AttachmentAction`'s `accessibilityLabel` is a required prop, not optional. |
 | `Marker` (`default`/`border`/`separator`, `Icon`/`Content`) | Same shape. `role="status"` → `accessibilityLiveRegion="polite"` on Android, `AccessibilityInfo.announceForAccessibility` on iOS (no live-region equivalent there). Shimmer is `MarkerContent`'s `shimmer` prop, not a `Marker` variant. |
 | Swipe to reply | `SwipeToReply` — `Gesture.Pan`, `transform`-only animation. A standalone wrapper, not baked into `Message`/`Bubble`. |

@@ -1,4 +1,4 @@
-import { Children, isValidElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Pressable, Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import type { ChatTheme } from "../../theme/tokens";
@@ -28,6 +28,16 @@ export interface BubbleProps {
    */
   align?: BubbleAlign;
   children?: ReactNode;
+  /**
+   * A `BubbleReactions` element, rendered as a sibling overlapping the
+   * bubble edge instead of as ordinary content — an explicit slot rather
+   * than scanning `children` for one by `displayName` (architecture
+   * review, 2026-08-26, candidate 7: string-matching a component's
+   * `displayName` silently stops working the moment someone wraps it in
+   * `memo()` or re-exports it under a different name; an explicit prop
+   * can't go stale that way).
+   */
+  reactions?: ReactNode;
   /** Long-press handler — this component has no opinion on what happens next (open a menu, a sheet, nothing). */
   onLongPress?: () => void;
   style?: StyleProp<ViewStyle>;
@@ -61,10 +71,6 @@ function bubbleColors(theme: ChatTheme, variant: BubbleVariant) {
  */
 const MAX_WIDTH_PERCENT = "80%";
 
-function isReactionsChild(child: ReactNode): boolean {
-  return isValidElement(child) && (child.type as { displayName?: string })?.displayName === "BubbleReactions";
-}
-
 /**
  * The message surface — corresponds to shadcn's `Bubble` + `BubbleContent`
  * collapsed into one component (RN has no separate polymorphic-`render`
@@ -72,11 +78,11 @@ function isReactionsChild(child: ReactNode): boolean {
  * `Pressable`/`Link` if you need bubble-as-button/link semantics beyond
  * `onLongPress`).
  *
- * A `BubbleReactions` child is detected and rendered as an overlapping
- * pill row per shadcn's model; every other child renders as ordinary
- * bubble content.
+ * Pass a `BubbleReactions` element via the `reactions` prop to render it
+ * as an overlapping pill row per shadcn's model; `children` is always
+ * ordinary bubble content.
  */
-export function Bubble({ variant, align, children, onLongPress, style, className }: BubbleProps) {
+export function Bubble({ variant, align, children, reactions, onLongPress, style, className }: BubbleProps) {
   const { state } = useChatUI();
   const { message, isOwn, align: contextAlign, groupedWithPrevious, groupedWithNext } = useMessageContext();
   const { radius, spacing, typography } = state.theme;
@@ -85,10 +91,6 @@ export function Bubble({ variant, align, children, onLongPress, style, className
   const resolvedAlign: BubbleAlign = align ?? contextAlign;
   const { background, foreground, border } = bubbleColors(state.theme, resolvedVariant);
   const isGhost = resolvedVariant === "ghost";
-
-  const childArray = Children.toArray(children);
-  const reactions = childArray.filter(isReactionsChild);
-  const content = childArray.filter((child) => !isReactionsChild(child));
 
   return (
     <View style={styles.wrap}>
@@ -115,11 +117,7 @@ export function Bubble({ variant, align, children, onLongPress, style, className
         ]}
         {...classNameProps(className)}
       >
-        {content.length > 0 ? (
-          content
-        ) : (
-          <Text style={{ color: foreground, fontSize: typography.body }}>{message.deletedAt ? "Message deleted" : message.body}</Text>
-        )}
+        {children ?? <Text style={{ color: foreground, fontSize: typography.body }}>{message.deletedAt ? "Message deleted" : message.body}</Text>}
       </Pressable>
       {reactions}
     </View>
