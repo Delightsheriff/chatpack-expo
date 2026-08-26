@@ -1,5 +1,6 @@
 import { Message as MessageRoot } from "./Message";
 import { Bubble } from "./Bubble";
+import { BubbleReactions } from "./BubbleReactions";
 import { Attachment } from "./Attachment";
 import { MessageQuickReactions } from "./QuickReactions";
 
@@ -18,10 +19,17 @@ import { MessageQuickReactions } from "./QuickReactions";
  * Each piece is also a plain named export below, for a consumer that wants
  * `Bubble` on its own without the namespace.
  */
-export const Message = Object.assign(MessageRoot, { Bubble, Attachment, QuickReactions: MessageQuickReactions });
+export const Message = Object.assign(MessageRoot, {
+  Bubble,
+  BubbleReactions,
+  Attachment,
+  QuickReactions: MessageQuickReactions,
+});
 
 export { Bubble } from "./Bubble";
-export type { BubbleProps, BubbleVariant } from "./Bubble";
+export type { BubbleProps, BubbleVariant, BubbleAlign } from "./Bubble";
+export { BubbleReactions } from "./BubbleReactions";
+export type { BubbleReactionsProps, BubbleReactionsSide, BubbleReactionsAlign } from "./BubbleReactions";
 export { Attachment, attachmentsFromMetadata } from "./Attachment";
 export type { AttachmentProps, ChatAttachment } from "./Attachment";
 export { MessageQuickReactions } from "./QuickReactions";

@@ -7,6 +7,7 @@ export type { ChatTheme, ChatColors, ChatSpacing, ChatRadius, ChatTypography } f
 export {
   Message,
   Bubble,
+  BubbleReactions,
   Attachment,
   attachmentsFromMetadata,
   MessageQuickReactions,
@@ -16,6 +17,10 @@ export type {
   MessageProps,
   BubbleProps,
   BubbleVariant,
+  BubbleAlign,
+  BubbleReactionsProps,
+  BubbleReactionsSide,
+  BubbleReactionsAlign,
   AttachmentProps,
   ChatAttachment,
   MessageQuickReactionsProps,
