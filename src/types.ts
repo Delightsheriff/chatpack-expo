@@ -80,3 +80,24 @@ export interface ChatReceiptState {
   /** The id of the last message known read, if any. */
   readMessageId?: string;
 }
+
+/**
+ * One row's worth of data for `ConversationList` — the chat-list screen
+ * (as opposed to `ChatMessage`, which is one row inside a conversation).
+ * Deliberately smaller than Chatpack's own `ConversationWithUnread`/
+ * `ClientChannelPreview` — only what the built-in `ConversationListItem`
+ * actually renders. Bring your own richer type and map it down to this
+ * shape, or fork `ConversationListItem` if you need more.
+ */
+export interface ChatConversationSummary {
+  id: string;
+  title: string;
+  avatarUrl?: string;
+  previewText?: string;
+  /** ISO 8601 — drives the row's timestamp text. */
+  updatedAt: string;
+  /** Rendered as a count badge when > 0. `undefined`/`0` falls through to `receiptStatus` if present. */
+  unreadCount?: number;
+  /** Rendered as a `ReadReceipt` icon when there's no unread count to show instead — typically the status of the last message you sent into this conversation. */
+  receiptStatus?: "sent" | "delivered" | "read";
+}

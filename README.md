@@ -202,12 +202,67 @@ re-exports before copying this verbatim.
 | `Marker` (`default`/`border`/`separator`, `Icon`/`Content`) | Same shape. `role="status"` → `accessibilityLiveRegion="polite"` on Android, `AccessibilityInfo.announceForAccessibility` on iOS (no live-region equivalent there). Shimmer is `MarkerContent`'s `shimmer` prop, not a `Marker` variant. |
 | Swipe to reply | `SwipeToReply` — `Gesture.Pan`, `transform`-only animation. A standalone wrapper, not baked into `Message`/`Bubble`. |
 | Hold to react | `Message.QuickReactions` / `QuickReactionBar` — a lighter inline alternative (or addition) to the full `MessageActionsSheet`. |
-| Long-press actions | `MessageActionsSheet` — native `@expo/ui` `BottomSheet`. `actions` prop takes an arbitrary `MessageAction[]` (forward/report/pin/anything); `buildDefaultMessageActions()` gives the reply/copy/delete starting point to extend. |
-| Read receipts | `ReadReceipt` + `resolveReceiptStatus()` — derived from Chatpack's per-conversation receipt watermark (`deliveredSeq`/`readMessageId`), not a per-message ledger; convention (matching every messaging app) is to render only under the sender's *last* message. |
+| Quoted replies | `Message.BubbleQuote` / `BubbleQuote`, passed via `Bubble`'s `quote` prop (same explicit-prop pattern as `reactions`). Built straight from `message.replyTo` — already resolved by the backend, no lookup needed. |
+| Long-press actions | `MessageActionsSheet` — native `@expo/ui` `BottomSheet`. Default actions: reply/copy/forward/delete, each gated on its `ChatUIActions` handler being wired. `actions` prop takes an arbitrary `MessageAction[]` to extend or replace; `buildDefaultMessageActions()` gives the starting point. |
+| Read receipts | `ReadReceipt` + `resolveReceiptStatus()` — derived from Chatpack's per-conversation receipt watermark (`deliveredSeq`/`readMessageId`), not a per-message ledger; convention (matching every messaging app) is to render only under the sender's *last* message. `variant: "text" \| "icon"` (default `"text"`) — icon renders single/double checkmarks, tinted with the theme accent when read. Both first-class. |
 | Typing indicator | `TypingIndicator` — bouncing-dots bubble off `useTyping()`. |
 | Keyboard push-up | `ChatKeyboardView` — the iOS/Android `KeyboardAvoidingView` behavior difference actually handled; Android also needs `"softwareKeyboardLayoutMode": "resize"` under `"android"` in `app.json`. |
 | `scroll-fade` utility | `ScrollFade` (`expo-linear-gradient`), used internally by `Attachment.Group` and exported standalone. |
 | `shimmer` utility | `ShimmerText`, used by `AttachmentTitle`/`MarkerContent`, exported standalone. |
+| Avatar | `Avatar` — image with an initials fallback (no `uri`, or the image fails to load). Every usage example elsewhere assumed some avatar component existed; this is it. |
+| Chat list screen | `ConversationList` (compound: `Item`/`StoryRow`/`SearchBar`/`FilterTabs`) — a separate, flat (non-anchored) virtualized list for the conversation-list screen, as opposed to `MessageScroller`'s conversation-*thread* view. See "The chat list" below. |
+
+## The chat list
+
+Not part of shadcn's chat component set (it's scoped to the message-thread
+view) — but every usage example implies a screen that lists conversations
+before you're inside one, so it's here too. `ConversationList` is a flat,
+ordinary virtualized list (unlike `MessageScroller`, there's no "turn"
+concept for a list of conversations), built the same way: a component-
+reference `ItemComponent` for the default row (`ConversationListItem`) with
+the same override pattern as `MessageScroller`'s `ItemComponent`.
+
+```tsx
+import { useState } from "react";
+import {
+  ConversationList,
+  ChatConversationSummary,
+} from "chatpack-expo-ui";
+
+function ChatListScreen({ conversations, contacts }: { conversations: ChatConversationSummary[]; contacts: { id: string; name: string; avatarUrl?: string }[] }) {
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  const filtered = conversations
+    .filter((c) => (filter === "unread" ? (c.unreadCount ?? 0) > 0 : true))
+    .filter((c) => c.title.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <ConversationList
+      conversations={filtered}
+      onPressConversation={(id) => navigation.navigate("Conversation", { id })}
+      ListHeaderComponent={
+        <>
+          <ConversationList.StoryRow items={contacts} onPressAdd={() => navigation.navigate("NewChat")} />
+          <ConversationList.SearchBar value={query} onChangeText={setQuery} />
+          <ConversationList.FilterTabs
+            tabs={[{ key: "all", label: "All" }, { key: "unread", label: "Unread" }, { key: "groups", label: "Groups" }]}
+            activeKey={filter}
+            onChange={setFilter}
+          />
+        </>
+      }
+    />
+  );
+}
+```
+
+`ConversationList.Item`'s unread indicator is either a count badge
+(`unreadCount > 0`) *or* a `ReadReceipt` icon (`receiptStatus`) — never
+both, since they answer different questions ("how many unread" vs. "was my
+last message seen"). `titleBadge` is a free slot next to the name for
+anything else (an emoji, a group icon) — this package has no emoji/icon
+picker of its own.
 
 ## Translated from the web version, on purpose
 

@@ -8,6 +8,7 @@ export type {
   ChatForwardProvenance,
   ChatTypingIndicator,
   ChatReceiptState,
+  ChatConversationSummary,
 } from "./types";
 
 export { lightTheme, darkTheme } from "./theme/tokens";
@@ -25,9 +26,13 @@ export * from "./components/message";
 export * from "./components/attachment";
 export * from "./components/scroller";
 export * from "./components/marker";
+export * from "./components/list";
 
 export { ScrollFade } from "./utils/ScrollFade";
 export type { ScrollFadeProps } from "./utils/ScrollFade";
+
+export { Avatar } from "./components/Avatar";
+export type { AvatarProps } from "./components/Avatar";
 
 export { Composer } from "./components/Composer";
 export type { ComposerProps } from "./components/Composer";
@@ -58,5 +63,6 @@ export {
   isDifferentCalendarDay,
   formatDateMarker,
   formatTimestamp,
+  formatConversationTimestamp,
   DEFAULT_GROUPING_WINDOW_MS,
 } from "./utils/grouping";
