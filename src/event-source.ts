@@ -43,10 +43,20 @@ function asEvent(event: XhrSseEvent): Event {
   return event as unknown as Event;
 }
 
+/**
+ * Per type: the original listener a caller registered, mapped to the
+ * wrapper closure actually registered on `real` — or `null` while still
+ * buffered (headers not resolved yet, so there's no `real` to register a
+ * wrapper on). Keeping this identity mapping (rather than discarding it
+ * once a wrapper is created) is what makes `removeEventListener` able to
+ * find and remove the exact wrapper it needs to.
+ */
+type ListenerMap = Map<(event: Event) => void, ((event: XhrSseEvent) => void) | null>;
+
 class DeferredExpoEventSource implements ChatpackEventSourceLike {
   private real: XhrEventSource | null = null;
   private closed = false;
-  private readonly bufferedListeners = new Map<string, Set<(event: Event) => void>>();
+  private readonly listeners = new Map<string, ListenerMap>();
 
   onopen: EventListener | null = null;
   onerror: EventListener | null = null;
@@ -77,9 +87,14 @@ class DeferredExpoEventSource implements ChatpackEventSourceLike {
     source.onopen = () => this.onopen?.({ type: "open" } as unknown as Event);
     source.onerror = (message) =>
       this.onerror?.({ type: "error", message } as unknown as Event);
-    for (const [type, listeners] of this.bufferedListeners) {
-      for (const listener of listeners) {
-        source.addEventListener(type, (event) => listener(asEvent(event)));
+    for (const [type, byListener] of this.listeners) {
+      for (const listener of byListener.keys()) {
+        // Buffered while headers were resolving — register the real wrapper
+        // now and remember it, so a later removeEventListener(listener) can
+        // find and remove this exact function from `source`.
+        const wrapper = (event: XhrSseEvent) => listener(asEvent(event));
+        source.addEventListener(type, wrapper);
+        byListener.set(listener, wrapper);
       }
     }
     this.real = source;
@@ -91,25 +106,27 @@ class DeferredExpoEventSource implements ChatpackEventSourceLike {
   }
 
   addEventListener(type: string, listener: (event: Event) => void): void {
+    let byListener = this.listeners.get(type);
+    if (!byListener) {
+      byListener = new Map();
+      this.listeners.set(type, byListener);
+    }
     if (this.real) {
-      this.real.addEventListener(type, (event) => listener(asEvent(event)));
-      return;
+      const wrapper = (event: XhrSseEvent) => listener(asEvent(event));
+      this.real.addEventListener(type, wrapper);
+      byListener.set(listener, wrapper);
+    } else {
+      // No real source yet — `open()` creates and registers the wrapper
+      // once headers resolve.
+      byListener.set(listener, null);
     }
-    let set = this.bufferedListeners.get(type);
-    if (!set) {
-      set = new Set();
-      this.bufferedListeners.set(type, set);
-    }
-    set.add(listener);
   }
 
-  // Buffered-vs-real listener identity can't round-trip through the wrapping
-  // closures above, so `removeEventListener` is a documented no-op once the
-  // real source exists. Chatpack never calls it — `disconnect()` always goes
-  // through `close()` instead — so this doesn't cause a leak in practice; it
-  // would only matter for a caller managing this factory's output directly.
   removeEventListener(type: string, listener: (event: Event) => void): void {
-    this.bufferedListeners.get(type)?.delete(listener);
+    const byListener = this.listeners.get(type);
+    const wrapper = byListener?.get(listener);
+    byListener?.delete(listener);
+    if (wrapper) this.real?.removeEventListener(type, wrapper);
   }
 
   close(): void {
