@@ -4,88 +4,21 @@ export type { ChatUIState, ChatUIActions, ChatUIProviderProps } from "./context/
 export { lightTheme, darkTheme } from "./theme/tokens";
 export type { ChatTheme, ChatColors, ChatSpacing, ChatRadius, ChatTypography } from "./theme/tokens";
 
-export {
-  Message,
-  MessageAvatar,
-  MessageHeader,
-  MessageContent,
-  MessageFooter,
-  MessageGroup,
-  Bubble,
-  BubbleReactions,
-  MessageQuickReactions,
-  useMessageContext,
-} from "./components/message";
-export type {
-  MessageProps,
-  MessageAlign,
-  MessageAvatarProps,
-  MessageHeaderProps,
-  MessageContentProps,
-  MessageFooterProps,
-  MessageGroupProps,
-  BubbleProps,
-  BubbleVariant,
-  BubbleAlign,
-  BubbleReactionsProps,
-  BubbleReactionsSide,
-  BubbleReactionsAlign,
-  MessageQuickReactionsProps,
-  MessageContextValue,
-} from "./components/message";
-
-export {
-  Attachment,
-  AttachmentMedia,
-  AttachmentContent,
-  AttachmentTitle,
-  AttachmentDescription,
-  AttachmentActions,
-  AttachmentAction,
-  AttachmentGroup,
-  attachmentsFromMetadata,
-} from "./components/attachment";
-export type {
-  AttachmentProps,
-  AttachmentMediaProps,
-  AttachmentContentProps,
-  AttachmentTitleProps,
-  AttachmentDescriptionProps,
-  AttachmentActionsProps,
-  AttachmentActionProps,
-  AttachmentGroupProps,
-  AttachmentState,
-  AttachmentSize,
-  AttachmentOrientation,
-  ChatAttachment,
-} from "./components/attachment";
+// message/, attachment/, marker/, and scroller/ each already curate their
+// own public surface in their own index.ts (that's the one list worth
+// hand-maintaining — it's short and changes rarely). Re-listing every name
+// a second time here bought nothing but a second place to forget to update
+// (architecture review, 2026-08-26, candidate 6) — `export *` collapses
+// that to one sync point instead of two. `Attachment`/`attachmentsFromMetadata`
+// are re-exported from both message/ and attachment/ (the same binding,
+// not a naming collision) since `Message.Attachment` needs them too.
+export * from "./components/message";
+export * from "./components/attachment";
+export * from "./components/scroller";
+export * from "./components/marker";
 
 export { ScrollFade } from "./utils/ScrollFade";
 export type { ScrollFadeProps } from "./utils/ScrollFade";
-
-export {
-  MessageScrollerProvider,
-  MessageScroller,
-  MessageScrollerItem,
-  MessageScrollerButton,
-  useMessageScroller,
-  useMessageScrollerVisibility,
-  useMessageScrollerScrollable,
-} from "./components/scroller";
-export type {
-  MessageScrollerProviderProps,
-  MessageScrollerProps,
-  MessageItemProps,
-  MessageScrollerItemProps,
-  MessageScrollerButtonProps,
-  UseMessageScrollerResult,
-  DefaultScrollPosition,
-  MessageScrollerVisibilityState,
-  MessageScrollerScrollableState,
-} from "./components/scroller";
-
-export { Marker, MarkerIcon, MarkerContent } from "./components/marker";
-export type { MarkerProps, MarkerVariant, MarkerIconProps, MarkerContentProps } from "./components/marker";
 
 export { Composer } from "./components/Composer";
 export type { ComposerProps } from "./components/Composer";
