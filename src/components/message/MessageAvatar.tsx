@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useMessageAvatarAlignment } from "./avatar-alignment";
 import { useMessageContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MessageAvatarProps {
   children: ReactNode;
@@ -39,8 +40,7 @@ export function MessageAvatar({ children, visible, style, className }: MessageAv
         !isVisible && styles.hidden,
         style,
       ]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {isVisible && children}
     </View>

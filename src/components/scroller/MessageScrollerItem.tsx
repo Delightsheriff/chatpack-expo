@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MessageScrollerItemProps {
   messageId: string;
@@ -38,8 +39,7 @@ export function MessageScrollerItem({ messageId, scrollAnchor, children, style, 
     <View
       testID={`message-scroller-item-${messageId}`}
       style={[scrollAnchor && styles.anchorSpacing, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

@@ -3,6 +3,7 @@ import { Pressable, Text, View, StyleSheet, type StyleProp, type ViewStyle } fro
 import { useChatUI } from "../../context/ChatUIProvider";
 import type { ChatTheme } from "../../theme/tokens";
 import { useMessageContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 /**
  * Ports shadcn's seven Bubble variants. `default` here means "the current
@@ -112,8 +113,7 @@ export function Bubble({ variant, align, children, onLongPress, style, className
           },
           style,
         ]}
-        // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-        className={className}
+        {...classNameProps(className)}
       >
         {content.length > 0 ? (
           content

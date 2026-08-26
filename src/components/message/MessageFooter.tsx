@@ -2,6 +2,7 @@ import { useCallback, type ReactNode } from "react";
 import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from "react-native";
 import { useMessageAvatarAlignment } from "./avatar-alignment";
 import { useMessageContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MessageFooterProps {
   children: ReactNode;
@@ -29,8 +30,7 @@ export function MessageFooter({ children, style, className }: MessageFooterProps
     <View
       onLayout={onLayout}
       style={[{ flexDirection: "row", alignSelf: align === "end" ? "flex-end" : "flex-start", marginTop: 2 }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

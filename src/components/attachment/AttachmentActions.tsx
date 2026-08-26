@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentActionsProps {
   children: ReactNode;
@@ -12,8 +13,7 @@ export function AttachmentActions({ children, style, className }: AttachmentActi
   return (
     <View
       style={[styles.row, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

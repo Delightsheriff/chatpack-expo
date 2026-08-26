@@ -1,6 +1,7 @@
 import { Text, type StyleProp, type TextStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { ShimmerText } from "../../utils/shimmer";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MarkerContentProps {
   children: string;
@@ -26,8 +27,7 @@ export function MarkerContent({ children, shimmer, style, className }: MarkerCon
   return (
     <Text
       style={textStyle}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </Text>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AccessibilityInfo, Platform, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { MarkerContext, type MarkerVariant } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MarkerProps {
   variant?: MarkerVariant;
@@ -66,8 +67,7 @@ export function Marker({ variant = "default", role, accessibilityLabel, children
           variant === "border" && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
           style,
         ]}
-        // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-        className={className}
+        {...classNameProps(className)}
       >
         {variant === "separator" ? (
           <>

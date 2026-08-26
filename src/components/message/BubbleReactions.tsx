@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
+import { classNameProps } from "../../utils/classNameProps";
 
 export type BubbleReactionsSide = "top" | "bottom";
 export type BubbleReactionsAlign = "start" | "end";
@@ -51,8 +52,7 @@ export function BubbleReactions({ side = "bottom", align = "end", children, styl
         { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 2, gap: 2 },
         style,
       ]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

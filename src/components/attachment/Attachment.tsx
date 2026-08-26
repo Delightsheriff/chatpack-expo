@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from "react";
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { AttachmentContext, type AttachmentState, type AttachmentSize, type AttachmentOrientation } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentProps {
   state?: AttachmentState;
@@ -44,8 +45,7 @@ export function Attachment({ state = "done", size = "default", orientation = "ho
           },
           style,
         ]}
-        // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-        className={className}
+        {...classNameProps(className)}
       >
         {children}
       </Pressable>

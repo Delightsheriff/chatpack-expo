@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { StyleProp, TextStyle } from "react-native";
+import { classNameProps } from "./classNameProps";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -41,8 +42,7 @@ export function ShimmerText({ children, style, className, testID }: ShimmerTextP
     <Animated.Text
       testID={testID}
       style={[animatedStyle, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </Animated.Text>

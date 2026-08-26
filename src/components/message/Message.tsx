@@ -5,6 +5,7 @@ import { useChatUI } from "../../context/ChatUIProvider";
 import { isSameGroup } from "../../utils/grouping";
 import { MessageContext, type MessageAlign } from "./context";
 import { MessageAvatarAlignmentContext } from "./avatar-alignment";
+import { classNameProps } from "../../utils/classNameProps";
 
 export type { MessageAlign };
 
@@ -77,8 +78,7 @@ export function Message({
             contextValue.groupedWithPrevious ? styles.tightTop : styles.spacedTop,
             style,
           ]}
-          // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-          className={className}
+          {...classNameProps(className)}
         >
           {children}
         </View>

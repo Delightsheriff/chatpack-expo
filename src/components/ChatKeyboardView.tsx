@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { classNameProps } from "../utils/classNameProps";
 
 export interface ChatKeyboardViewProps {
   children: ReactNode;
@@ -26,8 +27,7 @@ export function ChatKeyboardView({ children, keyboardVerticalOffset = 0, style, 
       style={[styles.flex, style]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={keyboardVerticalOffset}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </KeyboardAvoidingView>

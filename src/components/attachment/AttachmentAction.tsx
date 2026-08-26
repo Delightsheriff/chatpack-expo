@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentActionProps {
   onPress?: () => void;
@@ -26,8 +27,7 @@ export function AttachmentAction({ onPress, accessibilityLabel, children, style,
       accessibilityLabel={accessibilityLabel}
       hitSlop={8}
       style={[styles.button, { borderRadius: state.theme.radius.full }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </Pressable>

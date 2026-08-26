@@ -1,6 +1,7 @@
 import { Text, type StyleProp, type TextStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { useAttachmentContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentDescriptionProps {
   children: string;
@@ -24,8 +25,7 @@ export function AttachmentDescription({ children, style, className }: Attachment
     <Text
       numberOfLines={1}
       style={[{ color, fontSize: ui.theme.typography.caption }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </Text>

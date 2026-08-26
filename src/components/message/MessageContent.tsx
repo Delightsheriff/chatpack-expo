@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useMessageContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MessageContentProps {
   /** `MessageHeader`, the message surface (`Bubble`), and `MessageFooter`, in that order. */
@@ -26,8 +27,7 @@ export function MessageContent({ children, style, className }: MessageContentPro
   return (
     <View
       style={[styles.column, { alignItems: align === "end" ? "flex-end" : "flex-start" }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

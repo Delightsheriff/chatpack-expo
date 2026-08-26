@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-na
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated";
 import { useChatUI } from "../context/ChatUIProvider";
+import { classNameProps } from "../utils/classNameProps";
 
 export interface SwipeToReplyProps {
   onReply: () => void;
@@ -81,8 +82,7 @@ export function SwipeToReply({
         <Text style={{ color: state.theme.colors.mutedForeground, fontSize: state.theme.typography.body }}>↩</Text>
       </Animated.View>
       <GestureDetector gesture={gesture}>
-        {/* @ts-expect-error className is forwarded for NativeWind's cssInterop on Animated.View when the host app has NativeWind's babel/metro transform active; harmless unknown prop otherwise. */}
-        <Animated.View style={[rowStyle, style]} className={className}>
+        <Animated.View style={[rowStyle, style]} {...classNameProps(className)}>
           {children}
         </Animated.View>
       </GestureDetector>

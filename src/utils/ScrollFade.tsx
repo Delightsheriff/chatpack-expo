@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useChatUI } from "../context/ChatUIProvider";
+import { classNameProps } from "./classNameProps";
 
 export interface ScrollFadeProps {
   /** The scrollable content — this only overlays the edge-fade gradients, it doesn't scroll anything itself. */
@@ -29,8 +30,7 @@ export function ScrollFade({ children, edges = ["start", "end"], width = DEFAULT
   return (
     <View
       style={[styles.wrap, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
       {edges.includes("start") && (

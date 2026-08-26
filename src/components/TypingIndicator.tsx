@@ -3,6 +3,7 @@ import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
 import type { TypingIndicator as TypingIndicatorData } from "@chatpack/client/plugins";
 import { useChatUI } from "../context/ChatUIProvider";
+import { classNameProps } from "../utils/classNameProps";
 
 export interface TypingIndicatorProps {
   /** `useTyping(chat, { conversationId })`'s return value, straight through — `null` renders nothing. */
@@ -57,8 +58,7 @@ export function TypingIndicator({ typing, style, className }: TypingIndicatorPro
         { backgroundColor: colors.bubbleReceived, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
         style,
       ]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       <Dot delay={0} color={colors.mutedForeground} />
       <Dot delay={120} color={colors.mutedForeground} />

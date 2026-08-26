@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { useAttachmentContext, ATTACHMENT_MEDIA_SIZE } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentMediaProps {
   variant?: "icon" | "image";
@@ -25,8 +26,7 @@ export function AttachmentMedia({ variant = "icon", children, style, className }
         variant === "icon" && { backgroundColor: ui.theme.colors.background, alignItems: "center", justifyContent: "center" },
         style,
       ]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

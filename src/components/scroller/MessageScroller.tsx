@@ -10,6 +10,7 @@ import {
 import { FlashList, type ListRenderItemInfo, type ViewToken } from "@shopify/flash-list";
 import type { ClientMessage } from "@chatpack/client";
 import { registerNativeWindInterop } from "../../utils/nativewind-interop";
+import { classNameProps } from "../../utils/classNameProps";
 import { useMessageScrollerContext } from "./context";
 import { MessageScrollerButton } from "./MessageScrollerButton";
 
@@ -166,8 +167,7 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
         onViewableItemsChanged={handleViewableItemsChanged}
         onScroll={handleScroll}
         scrollEventThrottle={32}
-        // @ts-expect-error className registered via cssInterop when nativewind is installed; harmless unknown prop otherwise.
-        className={className}
+        {...classNameProps(className)}
       />
       {ButtonComponent && <ButtonComponent direction="end" />}
     </View>

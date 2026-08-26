@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, TextInput, Pressable, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../context/ChatUIProvider";
+import { classNameProps } from "../utils/classNameProps";
 
 export interface ComposerProps {
   onSend: (body: string) => void;
@@ -55,8 +56,7 @@ export function Composer({
         style,
       ]}
       testID={testID}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {leadingAccessory}
       <TextInput

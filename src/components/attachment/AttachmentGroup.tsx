@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { ScrollFade } from "../../utils/ScrollFade";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentGroupProps {
   children: ReactNode;
@@ -26,8 +27,7 @@ export function AttachmentGroup({ children, style, className }: AttachmentGroupP
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
         style={style}
-        // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-        className={className}
+        {...classNameProps(className)}
       >
         {children}
       </ScrollView>

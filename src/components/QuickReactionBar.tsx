@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Pressable, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from "react-native-reanimated";
 import { useChatUI } from "../context/ChatUIProvider";
+import { classNameProps } from "../utils/classNameProps";
 import { DEFAULT_QUICK_REACTIONS } from "./MessageActionsSheet";
 
 export interface QuickReactionBarProps {
@@ -56,8 +57,7 @@ export function QuickReactionBar({
         { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.full, padding: spacing.xs },
         style,
       ]}
-      // @ts-expect-error forwarded for NativeWind's cssInterop when the host app has the babel/metro transform active; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {emojis.map((emoji) => (
         <Pressable key={emoji} onPress={() => onSelect(emoji)} style={styles.item} hitSlop={6}>

@@ -2,6 +2,7 @@ import { Text, type StyleProp, type TextStyle } from "react-native";
 import type { ClientMessage } from "@chatpack/client";
 import type { ReceiptState } from "@chatpack/client/plugins";
 import { useChatUI } from "../context/ChatUIProvider";
+import { classNameProps } from "../utils/classNameProps";
 
 export type ReceiptStatus = "sent" | "delivered" | "read";
 
@@ -47,8 +48,7 @@ export function ReadReceipt({ status, style, className }: ReadReceiptProps) {
   return (
     <Text
       style={[{ color: state.theme.colors.mutedForeground, fontSize: state.theme.typography.timestamp }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {LABEL[status]}
     </Text>

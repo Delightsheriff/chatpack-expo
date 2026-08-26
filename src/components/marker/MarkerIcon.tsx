@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MarkerIconProps {
   children: ReactNode;
@@ -21,8 +22,7 @@ export function MarkerIcon({ children, style, className }: MarkerIconProps) {
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={style}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </View>

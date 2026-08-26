@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { View, Text, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MessageHeaderProps {
   children: ReactNode;
@@ -26,8 +27,7 @@ export function MessageHeader({ children, style, className }: MessageHeaderProps
   return (
     <View
       style={[{ marginBottom: spacing.xs / 2 }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {typeof children === "string" ? (
         <Text style={{ color: colors.mutedForeground, fontSize: typography.caption, fontWeight: "600" }}>{children}</Text>

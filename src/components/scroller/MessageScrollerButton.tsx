@@ -1,6 +1,7 @@
 import { Pressable, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { useMessageScroller, useMessageScrollerScrollable } from "./hooks";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface MessageScrollerButtonProps {
   /** Which edge this button scrolls to. Default `"end"` (the common "jump to latest" case). */
@@ -37,8 +38,7 @@ export function MessageScrollerButton({ direction = "end", style, className }: M
         !active && styles.inactive,
         style,
       ]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       <Text style={{ color: colors.foreground, fontSize: typography.caption }}>{direction === "end" ? "↓ Latest" : "↑ Start"}</Text>
     </Pressable>

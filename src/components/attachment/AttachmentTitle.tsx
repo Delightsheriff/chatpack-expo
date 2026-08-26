@@ -2,6 +2,7 @@ import { Text, type StyleProp, type TextStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { ShimmerText } from "../../utils/shimmer";
 import { useAttachmentContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
 
 export interface AttachmentTitleProps {
   children: string;
@@ -30,8 +31,7 @@ export function AttachmentTitle({ children, style, className }: AttachmentTitleP
     <Text
       numberOfLines={1}
       style={[{ color, fontSize }, style]}
-      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
-      className={className}
+      {...classNameProps(className)}
     >
       {children}
     </Text>
