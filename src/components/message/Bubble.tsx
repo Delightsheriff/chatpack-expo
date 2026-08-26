@@ -38,6 +38,13 @@ export interface BubbleProps {
    * can't go stale that way).
    */
   reactions?: ReactNode;
+  /**
+   * A `BubbleQuote` element, rendered inside the bubble above `children` —
+   * the quoted-parent bar for a reply. Same explicit-prop reasoning as
+   * `reactions`. Build it from `message.replyTo` (already resolved by the
+   * backend, no lookup needed): `message.replyTo && <BubbleQuote replyTo={message.replyTo} .../>`.
+   */
+  quote?: ReactNode;
   /** Long-press handler — this component has no opinion on what happens next (open a menu, a sheet, nothing). */
   onLongPress?: () => void;
   style?: StyleProp<ViewStyle>;
@@ -79,10 +86,11 @@ const MAX_WIDTH_PERCENT = "80%";
  * `onLongPress`).
  *
  * Pass a `BubbleReactions` element via the `reactions` prop to render it
- * as an overlapping pill row per shadcn's model; `children` is always
- * ordinary bubble content.
+ * as an overlapping pill row per shadcn's model; a `BubbleQuote` via
+ * `quote` to render a reply's quoted parent above the body; `children` is
+ * always ordinary bubble content.
  */
-export function Bubble({ variant, align, children, reactions, onLongPress, style, className }: BubbleProps) {
+export function Bubble({ variant, align, children, quote, reactions, onLongPress, style, className }: BubbleProps) {
   const { state } = useChatUI();
   const { message, isOwn, align: contextAlign, groupedWithPrevious, groupedWithNext } = useMessageContext();
   const { radius, spacing, typography } = state.theme;
@@ -117,6 +125,7 @@ export function Bubble({ variant, align, children, reactions, onLongPress, style
         ]}
         {...classNameProps(className)}
       >
+        {quote}
         {children ?? <Text style={{ color: foreground, fontSize: typography.body }}>{message.deletedAt ? "Message deleted" : message.body}</Text>}
       </Pressable>
       {reactions}
