@@ -36,10 +36,11 @@ function formatBytes(bytes: number): string {
 export interface AttachmentProps {
   attachment: ChatAttachment;
   style?: StyleProp<ViewStyle>;
+  className?: string;
 }
 
 /** File/image card — corresponds to shadcn's `Attachment`. */
-export function Attachment({ attachment, style }: AttachmentProps) {
+export function Attachment({ attachment, style, className }: AttachmentProps) {
   const { state, actions } = useChatUI();
   const { message } = useMessageContext();
   const { colors, radius, spacing, typography } = state.theme;
@@ -48,7 +49,12 @@ export function Attachment({ attachment, style }: AttachmentProps) {
 
   if (attachment.type === "image") {
     return (
-      <Pressable onPress={onPress} style={[{ borderRadius: radius.md, overflow: "hidden" }, style]}>
+      <Pressable
+        onPress={onPress}
+        style={[{ borderRadius: radius.md, overflow: "hidden" }, style]}
+        // @ts-expect-error forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+        className={className}
+      >
         <Image
           source={{ uri: attachment.url }}
           style={{
@@ -71,6 +77,8 @@ export function Attachment({ attachment, style }: AttachmentProps) {
         { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.sm, borderColor: colors.border },
         style,
       ]}
+      // @ts-expect-error forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+      className={className}
     >
       <View style={{ flex: 1 }}>
         <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: typography.body }}>

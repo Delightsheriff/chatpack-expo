@@ -9,20 +9,31 @@ export interface ComposerProps {
   placeholder?: string;
   maxLength?: number;
   style?: StyleProp<ViewStyle>;
+  className?: string;
   testID?: string;
 }
 
 /**
- * Text input + send button. Deliberately doesn't own attachment picking,
- * safe-area insets, or keyboard-avoidance — those are app/navigation
- * concerns (wrap this in your own `KeyboardAvoidingView`/`SafeAreaView`;
- * pass a picker trigger via `leadingAccessory`), so this component stays
- * usable regardless of your navigation stack.
+ * Text input + send button. Deliberately doesn't own attachment picking or
+ * safe-area insets — those are app/navigation concerns (pass a picker
+ * trigger via `leadingAccessory`; wrap in your own `SafeAreaView`) — but
+ * *does* expect to sit inside `ChatKeyboardView` (or your own
+ * `KeyboardAvoidingView`) for keyboard push-up, since that's easy to get
+ * wrong per-platform and not really this component's own concern to own
+ * either.
  *
  * Draft text is local state, not lifted to the caller — nothing outside
  * this component needs it mid-keystroke (`react-state-minimize`).
  */
-export function Composer({ onSend, leadingAccessory, placeholder = "Message", maxLength, style, testID }: ComposerProps) {
+export function Composer({
+  onSend,
+  leadingAccessory,
+  placeholder = "Message",
+  maxLength,
+  style,
+  className,
+  testID,
+}: ComposerProps) {
   const { state } = useChatUI();
   const { colors, radius, spacing, typography } = state.theme;
   const [draft, setDraft] = useState("");
@@ -44,6 +55,8 @@ export function Composer({ onSend, leadingAccessory, placeholder = "Message", ma
         style,
       ]}
       testID={testID}
+      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+      className={className}
     >
       {leadingAccessory}
       <TextInput

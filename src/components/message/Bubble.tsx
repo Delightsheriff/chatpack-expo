@@ -19,6 +19,7 @@ export interface BubbleProps {
   /** Long-press handler — this component has no opinion on what happens next (open a menu, a sheet, nothing). */
   onLongPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  className?: string;
 }
 
 /**
@@ -28,7 +29,7 @@ export interface BubbleProps {
  * long-press affordance are all it owns; grouping/alignment stay in the
  * `Message` root, attachments stay in `Attachment`.
  */
-export function Bubble({ variant, children, onLongPress, style }: BubbleProps) {
+export function Bubble({ variant, children, onLongPress, style, className }: BubbleProps) {
   const { state, actions } = useChatUI();
   const { message, isOwn, groupedWithPrevious, groupedWithNext } = useMessageContext();
   const { colors, radius, spacing, typography } = state.theme;
@@ -65,6 +66,8 @@ export function Bubble({ variant, children, onLongPress, style }: BubbleProps) {
         },
         style,
       ]}
+      // @ts-expect-error forwarded for NativeWind's cssInterop when the host app has the babel/metro transform active; harmless unknown prop otherwise.
+      className={className}
     >
       {children ?? <Text style={{ color: textColor, fontSize: typography.body }}>{message.deletedAt ? "Message deleted" : message.body}</Text>}
       {message.reactions.length > 0 && (

@@ -12,9 +12,13 @@ export default defineConfig({
     "react",
     "react-native",
     "@chatpack/client",
+    "@chatpack/client/plugins",
     "@expo/ui",
     "@shopify/flash-list",
     "expo-image",
+    "nativewind",
+    "react-native-gesture-handler",
     "react-native-reanimated",
+    "react-native-worklets",
   ],
 });

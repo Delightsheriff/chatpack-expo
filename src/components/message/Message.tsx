@@ -20,6 +20,8 @@ export interface MessageProps {
    */
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** Forwarded to the row's `View` for NativeWind (or any Tailwind-in-RN setup); harmless unknown prop if you're not using one. */
+  className?: string;
 }
 
 /**
@@ -37,6 +39,7 @@ export function Message({
   groupingWindowMs,
   children,
   style,
+  className,
 }: MessageProps) {
   const { state } = useChatUI();
   const isOwn = message.senderId === state.currentUserId;
@@ -60,6 +63,8 @@ export function Message({
           contextValue.groupedWithPrevious ? styles.tightTop : styles.spacedTop,
           style,
         ]}
+        // @ts-expect-error forwarded for NativeWind's cssInterop when the host app has the babel/metro transform active; harmless unknown prop otherwise.
+        className={className}
       >
         {children}
       </View>

@@ -9,6 +9,7 @@ export interface MarkerProps {
   /** e.g. "Today", "Alice added Bob", "Connecting…" — `Marker` doesn't compute this, callers do (`formatDateMarker` for `variant="date"`). */
   label: string;
   style?: StyleProp<ViewStyle>;
+  className?: string;
 }
 
 /**
@@ -17,13 +18,14 @@ export interface MarkerProps {
  * `variant="streaming"` for the shimmer effect). Corresponds to shadcn's
  * `Marker`.
  */
-export function Marker({ variant, label, style }: MarkerProps) {
+export function Marker({ variant, label, style, className }: MarkerProps) {
   const { state } = useChatUI();
   const { colors, spacing, typography } = state.theme;
 
   if (variant === "date") {
     return (
-      <View style={[styles.dateRow, { marginVertical: spacing.md }, style]}>
+      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+      <View style={[styles.dateRow, { marginVertical: spacing.md }, style]} className={className}>
         <View style={[styles.line, { backgroundColor: colors.border }]} />
         <Text style={{ color: colors.mutedForeground, fontSize: typography.caption, marginHorizontal: spacing.sm }}>
           {label}
@@ -35,14 +37,16 @@ export function Marker({ variant, label, style }: MarkerProps) {
 
   if (variant === "streaming") {
     return (
-      <View style={[styles.centerRow, { marginVertical: spacing.sm }, style]}>
+      // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+      <View style={[styles.centerRow, { marginVertical: spacing.sm }, style]} className={className}>
         <ShimmerText style={{ color: colors.mutedForeground, fontSize: typography.caption }}>{label}</ShimmerText>
       </View>
     );
   }
 
   return (
-    <View style={[styles.centerRow, { marginVertical: spacing.sm }, style]}>
+    // @ts-expect-error className forwarded for NativeWind's cssInterop; harmless unknown prop otherwise.
+    <View style={[styles.centerRow, { marginVertical: spacing.sm }, style]} className={className}>
       <Text style={{ color: colors.mutedForeground, fontSize: typography.caption }}>{label}</Text>
     </View>
   );
