@@ -16,15 +16,12 @@
  * request headers, and automatic `Last-Event-ID` resend on reconnect — are
  * simple enough to own directly and keep in sync with chatpack's contract.
  *
- * Known cost of the responseText-reparse approach: it's O(n) per tick against
- * the *whole* buffered response, not just the new bytes, so it re-scans
- * everything received so far on every chunk. For a chat stream — small JSON
- * messages, not a multi-megabyte feed — this is a non-issue in practice, but
- * it's why this class is not a fit for high-volume SSE (e.g. streaming LLM
- * tokens over a long single response). Chatpack fits the assumption: RN
- * apps that outgrow it can swap the underlying transport (see
- * `createExpoEventSourceFactory`'s `transport` option) for one built on
- * `expo/fetch`'s real `ReadableStream` without touching anything upstream.
+ * `responseText` itself is always the *whole* accumulated response (RN's
+ * XHR gives no finer-grained read), but `consume()` only slices and scans
+ * the new tail since the last tick — via `consumedLength` and a carried
+ * `pendingRecord` for a record split across two ticks — rather than
+ * re-scanning everything received so far each time, so per-tick cost
+ * doesn't grow with total stream length.
  */
 
 const READY_STATE = {
@@ -62,7 +59,10 @@ type XhrListener = (event: XhrSseEvent) => void;
 export class XhrEventSource {
   private xhr: XMLHttpRequest | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private processedLength = 0;
+  /** How much of `responseText` we've already read — lets `consume()` slice only the new tail each tick instead of re-scanning everything received so far. */
+  private consumedLength = 0;
+  /** A trailing, not-yet-`\n\n`-terminated record carried across ticks (a record can arrive split across two `onreadystatechange` calls). */
+  private pendingRecord = "";
   private lastEventId: string | null = null;
   private closed = false;
   private status: (typeof READY_STATE)[keyof typeof READY_STATE] = READY_STATE.CONNECTING;
@@ -128,7 +128,8 @@ export class XhrEventSource {
   private connect(): void {
     if (this.closed) return;
     this.status = READY_STATE.CONNECTING;
-    this.processedLength = 0;
+    this.consumedLength = 0;
+    this.pendingRecord = "";
 
     const xhr = new XMLHttpRequest();
     this.xhr = xhr;
@@ -181,15 +182,28 @@ export class XhrEventSource {
     xhr.send();
   }
 
-  /** Re-scans `responseText` from `processedLength` for complete `\n\n`-terminated SSE records. */
+  /**
+   * Slices only the bytes that arrived since the last tick — `responseText`
+   * itself is the full accumulated response (that part's unavoidable, RN's
+   * XHR gives us nothing finer-grained), but earlier versions of this
+   * method additionally re-scanned that whole string with `lastIndexOf`
+   * every tick, making total work across a stream O(n²) in message count.
+   * This tracks how much has already been consumed and only looks at the
+   * new tail, carrying any incomplete trailing record forward as
+   * `pendingRecord` instead of re-finding the same boundary twice.
+   */
   private consume(responseText: string): void {
-    const boundary = responseText.lastIndexOf("\n\n");
-    if (boundary === -1 || boundary < this.processedLength) return;
+    const newText = responseText.slice(this.consumedLength);
+    this.consumedLength = responseText.length;
+    if (newText.length === 0) return;
 
-    const chunk = responseText.slice(this.processedLength, boundary);
-    this.processedLength = boundary + 2;
+    const records = (this.pendingRecord + newText).split("\n\n");
+    // The last split segment is either "" (the new text ended exactly on a
+    // \n\n boundary) or an incomplete record — either way, it isn't a
+    // complete record yet, so it's carried forward rather than dispatched.
+    this.pendingRecord = records.pop() ?? "";
 
-    for (const record of chunk.split("\n\n")) {
+    for (const record of records) {
       this.dispatchRecord(record);
     }
   }

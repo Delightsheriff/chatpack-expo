@@ -80,7 +80,6 @@ Chatpack's own docs are explicit that this hook has **no retries and no delivery
 
 ## Known limitations of the vendored SSE client
 
-- Re-parses the whole buffered `responseText` on every chunk (`O(n)` per tick against everything received so far), not just the new bytes. Irrelevant for Chatpack's small JSON message events; would be a real cost for a high-volume single stream (e.g. token-by-token LLM output). Swap the transport if you need that — the `EventSourceFactory` seam is the same one Chatpack's own web client uses.
 - No support for the SSE `retry:` field's reconnect-delay override — reconnect delay is a fixed local policy (`reconnectIntervalMs`, default 1000ms) instead. Chatpack doesn't send `retry:`, so this hasn't mattered in practice.
 - `removeEventListener` is a documented no-op once the underlying connection exists for listeners registered while the auth-header fetch was still pending (identity can't round-trip through the buffering wrapper). Chatpack's own client never calls it — `disconnect()` always goes through `close()` — so this hasn't been a problem in testing, but it's a sharp edge if you use the `EventSourceFactory` output directly.
 

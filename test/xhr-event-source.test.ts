@@ -126,6 +126,48 @@ describe("XhrEventSource", () => {
     expect(received[1]?.data).toBe("second");
   });
 
+  it("assembles a record split across more than two ticks, dispatching once with no duplicates", () => {
+    const source = new XhrEventSource("https://api.test/stream");
+    const received: XhrSseEvent[] = [];
+    source.addEventListener("message", (e) => received.push(e));
+
+    // Same record's bytes trickle in across four separate onreadystatechange
+    // ticks — exercises consume() reading only the new tail each time
+    // (consumedLength) rather than re-scanning the whole responseText, and
+    // pendingRecord correctly carrying the incomplete tail across every
+    // intermediate tick, not just one.
+    instances[0]!.pushChunk("data: pie");
+    expect(received).toHaveLength(0);
+    instances[0]!.pushChunk("ce");
+    expect(received).toHaveLength(0);
+    instances[0]!.pushChunk("d toget");
+    expect(received).toHaveLength(0);
+    instances[0]!.pushChunk("her\n\n");
+
+    expect(received).toHaveLength(1);
+    expect(received[0]?.data).toBe("pieced together");
+  });
+
+  it("does not re-dispatch already-consumed records when a later tick has no new complete record", () => {
+    const source = new XhrEventSource("https://api.test/stream");
+    const received: XhrSseEvent[] = [];
+    source.addEventListener("message", (e) => received.push(e));
+
+    instances[0]!.pushChunk("data: first\n\n");
+    expect(received).toHaveLength(1);
+
+    // A further tick that only starts a new, still-incomplete record must
+    // not re-dispatch "first" (the old absolute-boundary implementation
+    // couldn't double-dispatch here either, but the new relative/consumedLength
+    // tracking is exactly the kind of change that could reintroduce it).
+    instances[0]!.pushChunk("data: second");
+    expect(received).toHaveLength(1);
+
+    instances[0]!.pushChunk("\n\n");
+    expect(received).toHaveLength(2);
+    expect(received[1]?.data).toBe("second");
+  });
+
   it("dispatches only to listeners registered for the matching event type", () => {
     const source = new XhrEventSource("https://api.test/stream");
     const created: XhrSseEvent[] = [];
