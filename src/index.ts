@@ -66,8 +66,8 @@ export type { ScrollFadeProps } from "./utils/ScrollFade";
 export { MessageScroller } from "./components/MessageScroller";
 export type { MessageScrollerProps, MessageItemProps, ScrollToLatestButtonProps } from "./components/MessageScroller";
 
-export { Marker } from "./components/Marker";
-export type { MarkerProps, MarkerVariant } from "./components/Marker";
+export { Marker, MarkerIcon, MarkerContent } from "./components/marker";
+export type { MarkerProps, MarkerVariant, MarkerIconProps, MarkerContentProps } from "./components/marker";
 
 export { Composer } from "./components/Composer";
 export type { ComposerProps } from "./components/Composer";
