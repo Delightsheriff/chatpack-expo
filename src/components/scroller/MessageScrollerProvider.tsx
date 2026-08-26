@@ -1,6 +1,6 @@
 import { useMemo, useRef, type ReactNode } from "react";
 import type { FlashListRef } from "@shopify/flash-list";
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../../types";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { createExternalStore } from "../../utils/createExternalStore";
 import {
@@ -12,7 +12,7 @@ import {
 
 export interface MessageScrollerProviderProps {
   /** Ascending chronological order (oldest first) — same order `useMessages` returns. Unlike the old inverted-list version, this is NOT reversed internally. */
-  messages: ClientMessage[];
+  messages: ChatMessage[];
   /**
    * Which row starts a new turn. Defaults to "the viewer's own messages"
    * (`message.senderId === currentUserId`), matching shadcn's own default
@@ -20,7 +20,7 @@ export interface MessageScrollerProviderProps {
    * event, anything that should settle near the top of the viewport when
    * it's the newest thing in the conversation.
    */
-  isTurnAnchor?: (message: ClientMessage, index: number, messages: ClientMessage[]) => boolean;
+  isTurnAnchor?: (message: ChatMessage, index: number, messages: ChatMessage[]) => boolean;
   /** Follow the live edge while streamed/new content grows the list. Default `true`. Maps to FlashList v2's `maintainVisibleContentPosition.autoscrollToBottomThreshold`, which already implements "follow only while at the live edge" natively. */
   autoScroll?: boolean;
   /** Pixels of the previous turn to keep visible above a newly anchored row. Default `0`. */
@@ -52,7 +52,7 @@ export function MessageScrollerProvider({
   children,
 }: MessageScrollerProviderProps) {
   const { state } = useChatUI();
-  const resolvedIsTurnAnchor = isTurnAnchor ?? ((message: ClientMessage) => message.senderId === state.currentUserId);
+  const resolvedIsTurnAnchor = isTurnAnchor ?? ((message: ChatMessage) => message.senderId === state.currentUserId);
 
   const { anchorIndexSet, lastAnchorIndex } = useMemo(() => {
     const set = new Set<number>();
@@ -67,7 +67,7 @@ export function MessageScrollerProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- resolvedIsTurnAnchor is expected to be referentially stable per the caller's own memoization; re-running per messages change is the actual intent.
   }, [messages]);
 
-  const listRef = useRef<FlashListRef<ClientMessage>>(null);
+  const listRef = useRef<FlashListRef<ChatMessage>>(null);
   const visibilityStore = useMemo(
     () => createExternalStore<MessageScrollerVisibilityState>({ currentAnchorId: null, visibleMessageIds: [] }),
     [],

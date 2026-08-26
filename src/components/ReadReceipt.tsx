@@ -1,6 +1,5 @@
 import { Text, type StyleProp, type TextStyle } from "react-native";
-import type { ClientMessage } from "@chatpack/client";
-import type { ReceiptState } from "@chatpack/client/plugins";
+import type { ChatMessage, ChatReceiptState } from "../types";
 import { useChatUI } from "../context/ChatUIProvider";
 import { classNameProps } from "../utils/classNameProps";
 
@@ -14,7 +13,7 @@ export type ReceiptStatus = "sent" | "delivered" | "read";
  * sender's *last* message rather than on every bubble (repeating it on
  * every prior message would just be restating the same watermark).
  */
-export function resolveReceiptStatus(message: ClientMessage, receipt: ReceiptState | null | undefined): ReceiptStatus {
+export function resolveReceiptStatus(message: ChatMessage, receipt: ChatReceiptState | null | undefined): ReceiptStatus {
   if (!receipt) return "sent";
   if (receipt.readMessageId === message.id) return "read";
   if (receipt.deliveredSeq !== undefined && message.seq <= receipt.deliveredSeq) return "delivered";

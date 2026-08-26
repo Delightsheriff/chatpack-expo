@@ -1,11 +1,11 @@
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../types";
 
 /** Messages from the same sender within this window render as one visual group. */
 export const DEFAULT_GROUPING_WINDOW_MS = 5 * 60 * 1000;
 
 export function isSameGroup(
-  a: ClientMessage | undefined,
-  b: ClientMessage | undefined,
+  a: ChatMessage | undefined,
+  b: ChatMessage | undefined,
   windowMs: number = DEFAULT_GROUPING_WINDOW_MS,
 ): boolean {
   if (!a || !b) return false;
@@ -14,7 +14,7 @@ export function isSameGroup(
 }
 
 /** Whether a date-separator `Marker` belongs between `a` and `b` (chronological a → b). */
-export function isDifferentCalendarDay(a: ClientMessage | undefined, b: ClientMessage | undefined): boolean {
+export function isDifferentCalendarDay(a: ChatMessage | undefined, b: ChatMessage | undefined): boolean {
   if (!a || !b) return Boolean(b) && !a;
   const dateA = new Date(a.createdAt);
   const dateB = new Date(b.createdAt);

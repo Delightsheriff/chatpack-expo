@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, type ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../../types";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { isSameGroup } from "../../utils/grouping";
 import { MessageContext, type MessageAlign } from "./context";
@@ -10,10 +10,10 @@ import { classNameProps } from "../../utils/classNameProps";
 export type { MessageAlign };
 
 export interface MessageProps {
-  message: ClientMessage;
+  message: ChatMessage;
   /** Neighbors in the (chronologically ascending) list, for grouping — pass `undefined` at the edges. */
-  previousMessage?: ClientMessage;
-  nextMessage?: ClientMessage;
+  previousMessage?: ChatMessage;
+  nextMessage?: ChatMessage;
   /** Grouping window override; see `isSameGroup`. */
   groupingWindowMs?: number;
   /** Defaults to derived from `isOwn` (`"end"` for your own messages) — override for group-chat cases where alignment isn't purely ownership. */

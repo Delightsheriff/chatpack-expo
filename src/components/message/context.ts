@@ -1,10 +1,10 @@
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../../types";
 import { createRequiredContext } from "../../utils/createRequiredContext";
 
 export type MessageAlign = "start" | "end";
 
 export interface MessageContextValue {
-  message: ClientMessage;
+  message: ChatMessage;
   isOwn: boolean;
   /** The alignment `Message` resolved (its `align` prop, or derived from `isOwn`) — read this instead of re-deriving from `isOwn`, so an `align` override on `Message` can't disagree with what `Bubble`/`MessageContent` render. */
   align: MessageAlign;

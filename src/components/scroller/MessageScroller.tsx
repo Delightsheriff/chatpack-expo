@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { FlashList, type ListRenderItemInfo, type ViewToken } from "@shopify/flash-list";
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../../types";
 import { registerNativeWindInterop } from "../../utils/nativewind-interop";
 import { classNameProps } from "../../utils/classNameProps";
 import { useMessageScrollerContext } from "./context";
@@ -17,10 +17,10 @@ import { MessageScrollerButton } from "./MessageScrollerButton";
 registerNativeWindInterop(FlashList);
 
 export interface MessageItemProps {
-  message: ClientMessage;
+  message: ChatMessage;
   /** Chronological neighbors (older/newer), for grouping — pass straight through to `<Message>`. */
-  previousMessage?: ClientMessage | undefined;
-  nextMessage?: ClientMessage | undefined;
+  previousMessage?: ChatMessage | undefined;
+  nextMessage?: ChatMessage | undefined;
   /** Whether `MessageScrollerProvider`'s `isTurnAnchor` resolved this row as a turn anchor. */
   isAnchor: boolean;
 }
@@ -80,13 +80,13 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
   } = useMessageScrollerContext();
 
   const renderItem = useCallback(
-    ({ item, index }: ListRenderItemInfo<ClientMessage>) => (
+    ({ item, index }: ListRenderItemInfo<ChatMessage>) => (
       <ItemComponent message={item} previousMessage={messages[index - 1]} nextMessage={messages[index + 1]} isAnchor={anchorIndexSet.has(index)} />
     ),
     [messages, anchorIndexSet, ItemComponent],
   );
 
-  const keyExtractor = useCallback((item: ClientMessage) => item.id, []);
+  const keyExtractor = useCallback((item: ChatMessage) => item.id, []);
 
   // Turn anchoring: scroll when a NEW anchor is appended at the end — not
   // on every render, and not for an anchor that already existed (e.g. a
@@ -117,7 +117,7 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
   }, [messages.length, defaultScrollPosition, lastAnchorIndex, listRef, scrollPreviousItemPeek]);
 
   const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<ClientMessage>[] }) => {
+    ({ viewableItems }: { viewableItems: ViewToken<ChatMessage>[] }) => {
       const visible = viewableItems.filter((token) => token.isViewable);
       const visibleMessageIds = visible.map((token) => token.item.id);
       const topVisibleIndex = visible.reduce<number | null>(

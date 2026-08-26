@@ -1,5 +1,5 @@
 import { BottomSheet, Column, Row, Button, Text } from "@expo/ui";
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../types";
 import { useChatUI, type ChatUIActions } from "../context/ChatUIProvider";
 
 export const DEFAULT_QUICK_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
@@ -34,7 +34,7 @@ export interface MessageAction {
  * <MessageActionsSheet message={message} actions={actions} isPresented={...} onDismiss={...} />
  * ```
  */
-export function buildDefaultMessageActions(message: ClientMessage, actions: ChatUIActions): MessageAction[] {
+export function buildDefaultMessageActions(message: ChatMessage, actions: ChatUIActions): MessageAction[] {
   const list: MessageAction[] = [];
   if (actions.onReply) {
     list.push({ id: "reply", label: "Reply", onPress: () => actions.onReply?.(message.id) });
@@ -53,7 +53,7 @@ export function buildDefaultMessageActions(message: ClientMessage, actions: Chat
 }
 
 export interface MessageActionsSheetProps {
-  message: ClientMessage;
+  message: ChatMessage;
   isPresented: boolean;
   onDismiss: () => void;
   /**

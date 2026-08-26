@@ -11,8 +11,6 @@ export default defineConfig({
   external: [
     "react",
     "react-native",
-    "@chatpack/client",
-    "@chatpack/client/plugins",
     "@expo/ui",
     "@shopify/flash-list",
     "expo-image",

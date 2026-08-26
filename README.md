@@ -1,22 +1,37 @@
 # chatpack-expo-ui
 
 shadcn/ui's chat component set — `Message`, `Bubble`, `Attachment`, `Marker`,
-`MessageScroller` — ported to React Native/Expo, built on top of
-[`chatpack-expo`](https://github.com/chddaniel/chatpack) and
-`@chatpack/client`'s hooks. Structural and behavioral parity with the shadcn
-originals, not just a visual re-skin: turn anchoring, live-edge follow,
-swipe-to-reply, hold-to-react, read receipts, typing indicators, and
-cross-platform keyboard push-up are all here, translated to RN's actual
-platform primitives rather than approximated.
+`MessageScroller` — ported to React Native/Expo. Structural and behavioral
+parity with the shadcn originals, not just a visual re-skin: turn anchoring,
+live-edge follow, swipe-to-reply, hold-to-react, read receipts, typing
+indicators, and cross-platform keyboard push-up are all here, translated to
+RN's actual platform primitives rather than approximated.
 
-This package does not reimplement any of Chatpack's domain logic — it only
-renders whatever `useMessages`/`useConversations`/`useTyping`/`useReceipts`
-(re-exported from `chatpack-expo/react`) already give you.
+**Backend-agnostic.** Nothing in this package imports `@chatpack/client` or
+any other backend SDK — every component works off this package's own
+`ChatMessage`/`ChatTypingIndicator`/`ChatReceiptState` types (see `src/types.ts`).
+Feed it plain objects matching those shapes from any data source and every
+component renders identically. It happens to be a natural fit for
+[`chatpack-expo`](https://github.com/chddaniel/chatpack) +
+`@chatpack/client`'s hooks — `ChatMessage` mirrors `ClientMessage`
+(`Jsonify<MessageWithDetails>`) field-for-field, so a real Chatpack app's
+data satisfies it with zero conversion — but that's a consequence of the
+shape matching, not a dependency.
+
+This package does not reimplement any backend's domain logic — it only
+renders whatever data shape you give it.
 
 ## Install
 
 ```sh
-npm install chatpack-expo-ui chatpack-expo @chatpack/client @expo/ui @shopify/flash-list expo-image expo-linear-gradient react-native-reanimated react-native-worklets react-native-gesture-handler
+npm install chatpack-expo-ui @expo/ui @shopify/flash-list expo-image expo-linear-gradient react-native-reanimated react-native-worklets react-native-gesture-handler
+```
+
+Using it with Chatpack specifically, also install the transport adapter and
+client SDK:
+
+```sh
+npm install chatpack-expo @chatpack/client
 ```
 
 `@expo/ui` requires Expo SDK 57+ (true native SwiftUI/Jetpack Compose
@@ -230,12 +245,18 @@ sign to fork the file into your app instead of fighting the package's shape.
 ## Status
 
 Full structural/behavioral rebuild against shadcn's actual chat component
-docs (`Message`, `Bubble`, `Attachment`, `Marker`, `MessageScroller`).
-Typechecks and builds clean against `@chatpack/client`, `@expo/ui@57`,
-`@shopify/flash-list@2`, `react-native-gesture-handler@3`, on React Native
-0.86 / React 19.2. Grouping/date-marker logic has unit test coverage
-(`npm test`). **Not yet run in a real Expo app** — the `MessageScroller`
-rebuild in particular (`maintainVisibleContentPosition` mapping,
-`scrollToIndex` peek math) is implemented per FlashList v2's documented
-API but unverified on-device. That's the next step before either this
-package or `chatpack-expo` is published.
+docs (`Message`, `Bubble`, `Attachment`, `Marker`, `MessageScroller`), then
+an architecture pass (2026-08-26) that collapsed several duplicated
+patterns found across the rebuild and, separately, decoupled every
+component from `@chatpack/client`'s types in favor of this package's own
+`ChatMessage`/`ChatTypingIndicator`/`ChatReceiptState` shapes — backend
+data only needs to match those shapes, not come from Chatpack specifically.
+
+Typechecks and builds clean against `@expo/ui@57`, `@shopify/flash-list@2`,
+`react-native-gesture-handler@3`, on React Native 0.86 / React 19.2.
+Grouping/date-marker logic has unit test coverage (`npm test`). **Not yet
+run in a real Expo app** — the `MessageScroller` rebuild in particular
+(`maintainVisibleContentPosition` mapping, `scrollToIndex` peek math) is
+implemented per FlashList v2's documented API but unverified on-device.
+That's the next step before either this package or `chatpack-expo` is
+published.

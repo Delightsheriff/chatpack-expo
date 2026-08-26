@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withDelay, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
-import type { TypingIndicator as TypingIndicatorData } from "@chatpack/client/plugins";
+import type { ChatTypingIndicator } from "../types";
 import { useChatUI } from "../context/ChatUIProvider";
 import { classNameProps } from "../utils/classNameProps";
 
 export interface TypingIndicatorProps {
   /** `useTyping(chat, { conversationId })`'s return value, straight through — `null` renders nothing. */
-  typing: TypingIndicatorData | null;
+  typing: ChatTypingIndicator | null;
   style?: StyleProp<ViewStyle>;
   className?: string;
 }

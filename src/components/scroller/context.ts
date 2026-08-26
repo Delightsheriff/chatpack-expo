@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import type { FlashListRef } from "@shopify/flash-list";
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../../types";
 import type { ExternalStore } from "../../utils/createExternalStore";
 import { createRequiredContext } from "../../utils/createRequiredContext";
 
@@ -21,8 +21,8 @@ export interface MessageScrollerContextValue {
   scrollPreviousItemPeek: number;
   defaultScrollPosition: DefaultScrollPosition;
   preserveScrollOnPrepend: boolean;
-  listRef: RefObject<FlashListRef<ClientMessage> | null>;
-  messages: ClientMessage[];
+  listRef: RefObject<FlashListRef<ChatMessage> | null>;
+  messages: ChatMessage[];
   anchorIndexSet: Set<number>;
   lastAnchorIndex: number;
   visibilityStore: ExternalStore<MessageScrollerVisibilityState>;

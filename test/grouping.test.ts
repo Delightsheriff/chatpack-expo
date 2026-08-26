@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ClientMessage } from "@chatpack/client";
+import type { ChatMessage } from "../src/types";
 import { isSameGroup, isDifferentCalendarDay, formatDateMarker, formatTimestamp } from "../src/utils/grouping";
 
-function message(overrides: Partial<ClientMessage> & { senderId: string; createdAt: string }): ClientMessage {
+function message(overrides: Partial<ChatMessage> & { senderId: string; createdAt: string }): ChatMessage {
   return {
     id: "m1",
     conversationId: "c1",

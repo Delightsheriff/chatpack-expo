@@ -1,6 +1,15 @@
 export { ChatUIProvider, useChatUI } from "./context/ChatUIProvider";
 export type { ChatUIState, ChatUIActions, ChatUIProviderProps } from "./context/ChatUIProvider";
 
+export type {
+  ChatMessage,
+  ChatMessageReference,
+  ChatReactionSummary,
+  ChatForwardProvenance,
+  ChatTypingIndicator,
+  ChatReceiptState,
+} from "./types";
+
 export { lightTheme, darkTheme } from "./theme/tokens";
 export type { ChatTheme, ChatColors, ChatSpacing, ChatRadius, ChatTypography } from "./theme/tokens";
 
