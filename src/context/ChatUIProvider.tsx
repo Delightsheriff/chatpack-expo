@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useColorScheme } from "react-native";
 import { lightTheme, darkTheme, type ChatTheme } from "../theme/tokens";
+import { createRequiredContext } from "../utils/createRequiredContext";
 
 /**
  * Everything a message-level component needs to know but shouldn't fetch or
@@ -34,7 +35,7 @@ interface ChatUIContextValue {
   actions: ChatUIActions;
 }
 
-const ChatUIContext = createContext<ChatUIContextValue | null>(null);
+const [ChatUIContext, useChatUI] = createRequiredContext<ChatUIContextValue>("ChatUIProvider");
 
 export interface ChatUIProviderProps extends ChatUIActions {
   currentUserId: string;
@@ -66,10 +67,4 @@ export function ChatUIProvider({
   return <ChatUIContext.Provider value={value}>{children}</ChatUIContext.Provider>;
 }
 
-export function useChatUI(): ChatUIContextValue {
-  const ctx = useContext(ChatUIContext);
-  if (!ctx) {
-    throw new Error("useChatUI must be used within a <ChatUIProvider>");
-  }
-  return ctx;
-}
+export { useChatUI };

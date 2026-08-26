@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AccessibilityInfo, Platform, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
-import { MarkerContext, type MarkerVariant } from "./context";
+import type { MarkerVariant } from "./context";
 import { classNameProps } from "../../utils/classNameProps";
 
 export interface MarkerProps {
@@ -44,7 +44,6 @@ function extractText(node: ReactNode): string {
 export function Marker({ variant = "default", role, accessibilityLabel, children, style, className }: MarkerProps) {
   const { state } = useChatUI();
   const { colors, spacing } = state.theme;
-  const contextValue = useMemo(() => ({ variant }), [variant]);
 
   const text = useMemo(() => extractText(children), [children]);
   const previousText = useRef<string | null>(null);
@@ -57,29 +56,27 @@ export function Marker({ variant = "default", role, accessibilityLabel, children
   }, [role, text]);
 
   return (
-    <MarkerContext.Provider value={contextValue}>
-      <View
-        accessibilityLiveRegion={role === "status" && Platform.OS === "android" ? "polite" : "none"}
-        accessibilityLabel={accessibilityLabel}
-        style={[
-          variant === "separator" ? styles.separatorRow : styles.inlineRow,
-          { paddingVertical: spacing.xs, paddingHorizontal: spacing.md, gap: spacing.xs },
-          variant === "border" && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-          style,
-        ]}
-        {...classNameProps(className)}
-      >
-        {variant === "separator" ? (
-          <>
-            <View style={[styles.line, { backgroundColor: colors.border }]} />
-            {children}
-            <View style={[styles.line, { backgroundColor: colors.border }]} />
-          </>
-        ) : (
-          children
-        )}
-      </View>
-    </MarkerContext.Provider>
+    <View
+      accessibilityLiveRegion={role === "status" && Platform.OS === "android" ? "polite" : "none"}
+      accessibilityLabel={accessibilityLabel}
+      style={[
+        variant === "separator" ? styles.separatorRow : styles.inlineRow,
+        { paddingVertical: spacing.xs, paddingHorizontal: spacing.md, gap: spacing.xs },
+        variant === "border" && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+        style,
+      ]}
+      {...classNameProps(className)}
+    >
+      {variant === "separator" ? (
+        <>
+          <View style={[styles.line, { backgroundColor: colors.border }]} />
+          {children}
+          <View style={[styles.line, { backgroundColor: colors.border }]} />
+        </>
+      ) : (
+        children
+      )}
+    </View>
   );
 }
 

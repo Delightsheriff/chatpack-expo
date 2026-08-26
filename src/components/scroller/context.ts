@@ -1,7 +1,8 @@
-import { createContext, useContext, type RefObject } from "react";
+import type { RefObject } from "react";
 import type { FlashListRef } from "@shopify/flash-list";
 import type { ClientMessage } from "@chatpack/client";
 import type { ExternalStore } from "../../utils/createExternalStore";
+import { createRequiredContext } from "../../utils/createRequiredContext";
 
 export type DefaultScrollPosition = "start" | "end" | "last-anchor";
 
@@ -28,12 +29,5 @@ export interface MessageScrollerContextValue {
   scrollableStore: ExternalStore<MessageScrollerScrollableState>;
 }
 
-export const MessageScrollerContext = createContext<MessageScrollerContextValue | null>(null);
-
-export function useMessageScrollerContext(): MessageScrollerContextValue {
-  const ctx = useContext(MessageScrollerContext);
-  if (!ctx) {
-    throw new Error("This must be used within a <MessageScrollerProvider>.");
-  }
-  return ctx;
-}
+export const [MessageScrollerContext, useMessageScrollerContext] =
+  createRequiredContext<MessageScrollerContextValue>("MessageScrollerProvider");

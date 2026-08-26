@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createRequiredContext } from "../../utils/createRequiredContext";
 
 /**
  * Bridges `MessageContent`'s `MessageFooter` (if any) to the sibling
@@ -14,12 +14,5 @@ export interface MessageAvatarAlignmentContextValue {
   reportFooterHeight: (height: number) => void;
 }
 
-export const MessageAvatarAlignmentContext = createContext<MessageAvatarAlignmentContextValue | null>(null);
-
-export function useMessageAvatarAlignment(): MessageAvatarAlignmentContextValue {
-  const ctx = useContext(MessageAvatarAlignmentContext);
-  if (!ctx) {
-    throw new Error("MessageAvatar/MessageFooter must be used inside a <Message> root.");
-  }
-  return ctx;
-}
+export const [MessageAvatarAlignmentContext, useMessageAvatarAlignment] =
+  createRequiredContext<MessageAvatarAlignmentContextValue>("Message");
