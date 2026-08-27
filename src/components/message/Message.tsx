@@ -71,10 +71,16 @@ export function Message({
         <View
           style={[
             styles.row,
-            {
-              flexDirection: resolvedAlign === "end" ? "row-reverse" : "row",
-              justifyContent: resolvedAlign === "end" ? "flex-end" : "flex-start",
-            },
+            // `flexDirection` alone puts an own ("end") message on the
+            // right: "row-reverse" flips which physical side is the main
+            // axis's *start*, so packing toward "flex-start" (Yoga's
+            // default — deliberately not overridden per alignment) lands
+            // on the right for a reversed row and the left for a normal
+            // one. Setting `justifyContent: "flex-end"` for "end" here
+            // used to double-flip that and push own messages to the left
+            // instead — the same bug CSS's `row-reverse` catches everyone
+            // out on at least once.
+            { flexDirection: resolvedAlign === "end" ? "row-reverse" : "row" },
             contextValue.groupedWithPrevious ? styles.tightTop : styles.spacedTop,
             style,
           ]}
