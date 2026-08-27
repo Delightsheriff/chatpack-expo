@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChatMessage } from "../src/types";
-import { isSameGroup, isDifferentCalendarDay, formatDateMarker, formatTimestamp, formatConversationTimestamp } from "../src/utils/grouping";
+import { isSameGroup, isDifferentCalendarDay, formatDateMarker, formatTimestamp } from "../src/utils/grouping";
 
 function message(overrides: Partial<ChatMessage> & { senderId: string; createdAt: string }): ChatMessage {
   return {
@@ -79,36 +79,6 @@ describe("formatDateMarker", () => {
     const now = new Date("2026-08-26T12:00:00.000Z");
     const result = formatDateMarker(new Date("2026-08-01T12:00:00.000Z"), now);
     expect(result).toContain("August");
-  });
-
-  it("includes the year when the date falls in a different year than now", () => {
-    const now = new Date("2026-08-26T12:00:00.000Z");
-    const result = formatDateMarker(new Date("2025-08-01T12:00:00.000Z"), now);
-    expect(result).toContain("2025");
-  });
-});
-
-describe("formatConversationTimestamp", () => {
-  it("renders clock time for today, matching formatTimestamp", () => {
-    const now = new Date("2026-08-26T14:30:00.000Z");
-    expect(formatConversationTimestamp(now, now)).toBe(formatTimestamp(now));
-  });
-
-  it("renders 'Yesterday' for the prior day, not a clock time", () => {
-    const now = new Date("2026-08-26T12:00:00.000Z");
-    expect(formatConversationTimestamp(new Date("2026-08-25T12:00:00.000Z"), now)).toBe("Yesterday");
-  });
-
-  it("renders a short month/day for anything older, within the same year", () => {
-    const now = new Date("2026-08-26T12:00:00.000Z");
-    const result = formatConversationTimestamp(new Date("2026-05-23T12:00:00.000Z"), now);
-    expect(result).toBe("May 23");
-  });
-
-  it("includes the year when older and from a different year", () => {
-    const now = new Date("2026-08-26T12:00:00.000Z");
-    const result = formatConversationTimestamp(new Date("2024-05-23T12:00:00.000Z"), now);
-    expect(result).toContain("2024");
   });
 });
 

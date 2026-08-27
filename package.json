@@ -46,9 +46,6 @@
       "optional": true
     }
   },
-  "dependencies": {
-    "date-fns": "^4.4.0"
-  },
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@expo/ui": "^57.0.13",

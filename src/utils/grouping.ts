@@ -1,4 +1,3 @@
-import { isSameDay, subDays, differenceInMilliseconds, format } from "date-fns";
 import type { ChatMessage } from "../types";
 
 /** Messages from the same sender within this window render as one visual group. */
@@ -11,46 +10,40 @@ export function isSameGroup(
 ): boolean {
   if (!a || !b) return false;
   if (a.senderId !== b.senderId) return false;
-  return Math.abs(differenceInMilliseconds(new Date(b.createdAt), new Date(a.createdAt))) <= windowMs;
+  return Math.abs(new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) <= windowMs;
 }
 
 /** Whether a date-separator `Marker` belongs between `a` and `b` (chronological a → b). */
 export function isDifferentCalendarDay(a: ChatMessage | undefined, b: ChatMessage | undefined): boolean {
   if (!a || !b) return Boolean(b) && !a;
-  return !isSameDay(new Date(a.createdAt), new Date(b.createdAt));
+  const dateA = new Date(a.createdAt);
+  const dateB = new Date(b.createdAt);
+  return (
+    dateA.getFullYear() !== dateB.getFullYear() ||
+    dateA.getMonth() !== dateB.getMonth() ||
+    dateA.getDate() !== dateB.getDate()
+  );
 }
 
-/**
- * `now` is a parameter, not read internally via `new Date()` — deliberately,
- * so this stays deterministic and testable with a fixed reference time.
- * date-fns' own `isToday`/`isYesterday` always compare against the real
- * system clock and can't be pointed at an arbitrary `now`, so this composes
- * `isSameDay` + `subDays` instead to get the same "relative to `now`"
- * behavior with date-fns' day-boundary math (DST-safe) rather than hand-rolled.
- */
 export function formatDateMarker(date: Date, now: Date = new Date()): string {
+  const isSameDay = (x: Date, y: Date) =>
+    x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
   if (isSameDay(date, now)) return "Today";
-  if (isSameDay(date, subDays(now, 1))) return "Yesterday";
+  if (isSameDay(date, yesterday)) return "Yesterday";
 
   const sameYear = date.getFullYear() === now.getFullYear();
-  return format(date, sameYear ? "EEEE, MMMM d" : "EEEE, MMMM d, yyyy");
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
 }
 
 export function formatTimestamp(date: Date): string {
-  return format(date, "h:mm a");
-}
-
-/**
- * The compact, adaptive timestamp a chat-list row wants — clock time for
- * today, `"Yesterday"`, then a short date — as opposed to `formatTimestamp`
- * (always clock time, for a message bubble where the day is already
- * established by the surrounding `Marker`) or `formatDateMarker` (a full
- * separator label, not a one-line row timestamp).
- */
-export function formatConversationTimestamp(date: Date, now: Date = new Date()): string {
-  if (isSameDay(date, now)) return formatTimestamp(date);
-  if (isSameDay(date, subDays(now, 1))) return "Yesterday";
-
-  const sameYear = date.getFullYear() === now.getFullYear();
-  return format(date, sameYear ? "MMM d" : "MMM d, yyyy");
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
