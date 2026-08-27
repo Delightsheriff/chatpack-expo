@@ -29,7 +29,7 @@ export interface MessageAction {
  * ```tsx
  * const actions = [
  *   ...buildDefaultMessageActions(message, chatActions),
- *   { id: "report", label: "Report", variant: "text", onPress: () => report(message.id) },
+ *   { id: "forward", label: "Forward", onPress: () => forward(message.id) },
  * ];
  * <MessageActionsSheet message={message} actions={actions} isPresented={...} onDismiss={...} />
  * ```
@@ -41,9 +41,6 @@ export function buildDefaultMessageActions(message: ChatMessage, actions: ChatUI
   }
   if (actions.onCopyMessage) {
     list.push({ id: "copy", label: "Copy", variant: "outlined", onPress: () => actions.onCopyMessage?.(message.id) });
-  }
-  if (actions.onForwardMessage) {
-    list.push({ id: "forward", label: "Forward", variant: "outlined", onPress: () => actions.onForwardMessage?.(message.id) });
   }
   if (actions.onDeleteMessage) {
     // Universal Button has no destructive/role variant (only

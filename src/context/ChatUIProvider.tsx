@@ -27,7 +27,6 @@ export interface ChatUIActions {
   onReact?: ((messageId: string, emoji: string) => void) | undefined;
   onDeleteMessage?: ((messageId: string) => void) | undefined;
   onCopyMessage?: ((messageId: string) => void) | undefined;
-  onForwardMessage?: ((messageId: string) => void) | undefined;
   onOpenAttachment?: ((attachmentId: string, messageId: string) => void) | undefined;
 }
 
@@ -52,7 +51,6 @@ export function ChatUIProvider({
   onReact,
   onDeleteMessage,
   onCopyMessage,
-  onForwardMessage,
   onOpenAttachment,
   children,
 }: ChatUIProviderProps) {
@@ -61,9 +59,9 @@ export function ChatUIProvider({
   const value = useMemo<ChatUIContextValue>(
     () => ({
       state: { currentUserId, theme: theme ?? (colorScheme === "dark" ? darkTheme : lightTheme) },
-      actions: { onReply, onReact, onDeleteMessage, onCopyMessage, onForwardMessage, onOpenAttachment },
+      actions: { onReply, onReact, onDeleteMessage, onCopyMessage, onOpenAttachment },
     }),
-    [currentUserId, theme, colorScheme, onReply, onReact, onDeleteMessage, onCopyMessage, onForwardMessage, onOpenAttachment],
+    [currentUserId, theme, colorScheme, onReply, onReact, onDeleteMessage, onCopyMessage, onOpenAttachment],
   );
 
   return <ChatUIContext.Provider value={value}>{children}</ChatUIContext.Provider>;

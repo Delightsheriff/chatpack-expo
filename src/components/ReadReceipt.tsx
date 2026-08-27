@@ -1,11 +1,9 @@
-import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Text, type StyleProp, type TextStyle } from "react-native";
 import type { ChatMessage, ChatReceiptState } from "../types";
 import { useChatUI } from "../context/ChatUIProvider";
 import { classNameProps } from "../utils/classNameProps";
 
 export type ReceiptStatus = "sent" | "delivered" | "read";
-export type ReceiptVariant = "text" | "icon";
 
 /**
  * Derives one message's status from `useReceipts`' per-conversation
@@ -24,17 +22,7 @@ export function resolveReceiptStatus(message: ChatMessage, receipt: ChatReceiptS
 
 export interface ReadReceiptProps {
   status: ReceiptStatus;
-  /**
-   * `"text"` (default, unchanged): "Sent"/"Delivered"/"Read". `"icon"`: a
-   * single check for `"sent"`, a double check for `"delivered"`, and a
-   * double check tinted with the theme's accent color for `"read"` — the
-   * single-check/double-check/colored-double-check pattern most chat apps
-   * use. Both are first-class, not one "real" version and one bolted-on
-   * alternative — pick whichever fits, or swap in your own by not using
-   * this component at all (`resolveReceiptStatus` is the reusable part).
-   */
-  variant?: ReceiptVariant;
-  style?: StyleProp<TextStyle> | StyleProp<ViewStyle>;
+  style?: StyleProp<TextStyle>;
   className?: string;
 }
 
@@ -45,32 +33,20 @@ const LABEL: Record<ReceiptStatus, string> = {
 };
 
 /**
- * The small status indicator under your own sent message.
+ * The small status line under your own sent message. Deliberately just
+ * text, not a tri-state checkmark icon set — swap this for your own
+ * icon-based version by not using it at all; `resolveReceiptStatus` is the
+ * part worth reusing.
  *
  * Intentionally has no opinion on *which* message to render this under —
  * typically only your own last message in the list, computed in your
  * `ItemComponent` (e.g. `index === messages.length - 1 && message.senderId === currentUserId`).
  */
-export function ReadReceipt({ status, variant = "text", style, className }: ReadReceiptProps) {
+export function ReadReceipt({ status, style, className }: ReadReceiptProps) {
   const { state } = useChatUI();
-  const { colors, typography } = state.theme;
-
-  if (variant === "icon") {
-    const color = status === "read" ? colors.accent : colors.mutedForeground;
-    return (
-      <View
-        style={[{ flexDirection: "row" }, style as StyleProp<ViewStyle>]}
-        accessibilityLabel={LABEL[status]}
-        {...classNameProps(className)}
-      >
-        <Ionicons name={status === "sent" ? "checkmark" : "checkmark-done"} size={typography.timestamp + 3} color={color} />
-      </View>
-    );
-  }
-
   return (
     <Text
-      style={[{ color: colors.mutedForeground, fontSize: typography.timestamp }, style as StyleProp<TextStyle>]}
+      style={[{ color: state.theme.colors.mutedForeground, fontSize: state.theme.typography.timestamp }, style]}
       {...classNameProps(className)}
     >
       {LABEL[status]}

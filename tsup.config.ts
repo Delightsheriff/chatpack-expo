@@ -12,7 +12,6 @@ export default defineConfig({
     "react",
     "react-native",
     "@expo/ui",
-    "@expo/vector-icons",
     "@shopify/flash-list",
     "expo-image",
     "expo-linear-gradient",
