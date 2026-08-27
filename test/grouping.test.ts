@@ -21,7 +21,7 @@ function message(overrides: Partial<ChatMessage> & { senderId: string; createdAt
     reactions: [],
     metadata: {},
     ...overrides,
-  } as ClientMessage;
+  } as ChatMessage;
 }
 
 describe("isSameGroup", () => {
