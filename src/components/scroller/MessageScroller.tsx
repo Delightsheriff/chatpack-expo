@@ -88,17 +88,21 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
 
   const keyExtractor = useCallback((item: ChatMessage) => item.id, []);
 
-  // Turn anchoring: scroll when a NEW anchor is appended at the end — not
-  // on every render, and not for an anchor that already existed (e.g. a
-  // re-render from an unrelated edit elsewhere in the list).
+  // Turn anchoring / live-edge scrolling: scroll when a new message is appended at the end
+  const previousMessageCount = useRef(messages.length);
   const previousLastAnchorIndex = useRef(lastAnchorIndex);
   useEffect(() => {
-    const isFreshlyAppendedAnchor = lastAnchorIndex >= 0 && lastAnchorIndex === messages.length - 1 && lastAnchorIndex !== previousLastAnchorIndex.current;
-    if (isFreshlyAppendedAnchor) {
-      void listRef.current?.scrollToIndex({ index: lastAnchorIndex, viewPosition: 0, viewOffset: -scrollPreviousItemPeek, animated: true });
+    if (messages.length > previousMessageCount.current) {
+      if (defaultScrollPosition === "end" || autoScroll) {
+        // In mobile messengers, newly sent/received messages sit at the live bottom edge
+        void listRef.current?.scrollToEnd({ animated: true });
+      } else if (lastAnchorIndex >= 0 && lastAnchorIndex === messages.length - 1 && lastAnchorIndex !== previousLastAnchorIndex.current) {
+        void listRef.current?.scrollToIndex({ index: lastAnchorIndex, viewPosition: 0, viewOffset: -scrollPreviousItemPeek, animated: true });
+      }
     }
+    previousMessageCount.current = messages.length;
     previousLastAnchorIndex.current = lastAnchorIndex;
-  }, [lastAnchorIndex, messages.length, listRef, scrollPreviousItemPeek]);
+  }, [lastAnchorIndex, messages.length, listRef, scrollPreviousItemPeek, autoScroll, defaultScrollPosition]);
 
   // Opening position — applied once, the first time there's data to open on.
   const didApplyInitialPosition = useRef(false);
@@ -109,11 +113,11 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
       listRef.current?.scrollToTop({ animated: false });
     } else if (defaultScrollPosition === "last-anchor" && lastAnchorIndex >= 0) {
       void listRef.current?.scrollToIndex({ index: lastAnchorIndex, viewPosition: 0, viewOffset: -scrollPreviousItemPeek, animated: false });
+    } else if (defaultScrollPosition === "end") {
+      setTimeout(() => {
+        listRef.current?.scrollToEnd({ animated: false });
+      }, 50);
     }
-    // "end": no action needed — a freshly mounted, non-inverted FlashList
-    // already renders with the last item as the initial scroll position
-    // once content exceeds one screen; for a short conversation "end" and
-    // "start" coincide anyway.
   }, [messages.length, defaultScrollPosition, lastAnchorIndex, listRef, scrollPreviousItemPeek]);
 
   const handleViewableItemsChanged = useCallback(

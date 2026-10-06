@@ -36,6 +36,7 @@ export function MessageContent({ children, style, className }: MessageContentPro
 
 const styles = StyleSheet.create({
   column: {
+    maxWidth: "80%",
     flexShrink: 1,
   },
 });

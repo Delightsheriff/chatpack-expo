@@ -98,12 +98,19 @@ export function Bubble({ variant, align, children, quote, reactions, onLongPress
   const isGhost = resolvedVariant === "ghost";
 
   return (
-    <View style={styles.wrap}>
+    <View
+      style={[
+        styles.wrap,
+        {
+          alignSelf: resolvedAlign === "end" ? "flex-end" : "flex-start",
+          maxWidth: isGhost ? undefined : MAX_WIDTH_PERCENT,
+        },
+      ]}
+    >
       <Pressable
         onLongPress={onLongPress}
         style={[
           styles.bubble,
-          !isGhost && { maxWidth: MAX_WIDTH_PERCENT },
           {
             backgroundColor: background,
             borderRadius: isGhost ? 0 : radius.lg,
@@ -131,10 +138,6 @@ export function Bubble({ variant, align, children, quote, reactions, onLongPress
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    alignSelf: "flex-start",
-  },
-  bubble: {
-    alignSelf: "flex-start",
-  },
+  wrap: {},
+  bubble: {},
 });
