@@ -32,7 +32,7 @@ const OTHER = "alex";
 // instead of a constant; skipped here specifically to avoid a second native
 // rebuild for a mock-data preview — see the note where it's applied below.
 const BOTTOM_INSET = Platform.OS === "ios" ? 34 : 0;
-const TOP_INSET = Platform.OS === "ios" ? 50 : (StatusBar.currentHeight ?? 0);
+const TOP_INSET = Platform.OS === "ios" ? 56 : (StatusBar.currentHeight ?? 0);
 
 function msg(overrides: Partial<ChatMessage> & { id: string; senderId: string; body: string; createdAt: string }): ChatMessage {
   return {
@@ -196,7 +196,7 @@ export function DesignPreviewScreen() {
         onOpenActions={(msg) => setSelectedMessage(msg)}
       >
         <ChatKeyboardView>
-          <MessageScrollerProvider messages={messages} isTurnAnchor={isTurnAnchor} scrollPreviousItemPeek={24} autoScroll>
+          <MessageScrollerProvider messages={messages} defaultScrollPosition="end" autoScroll>
             <MessageScroller ItemComponent={MemoMessageRow} />
           </MessageScrollerProvider>
           {showTyping && <TypingIndicator typing={{ senderId: OTHER, at: new Date().toISOString() }} />}
