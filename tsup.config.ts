@@ -11,7 +11,6 @@ export default defineConfig({
   external: [
     "react",
     "react-native",
-    "@expo/ui",
     "@shopify/flash-list",
     "expo-image",
     "expo-linear-gradient",
@@ -19,5 +18,6 @@ export default defineConfig({
     "react-native-gesture-handler",
     "react-native-reanimated",
     "react-native-worklets",
+    "@expo/vector-icons",
   ],
 });

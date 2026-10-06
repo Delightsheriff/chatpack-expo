@@ -3,53 +3,80 @@ import type { ChatMessage, ChatReceiptState } from "../types";
 import { useChatUI } from "../context/ChatUIProvider";
 import { classNameProps } from "../utils/classNameProps";
 
-export type ReceiptStatus = "sent" | "delivered" | "read";
+export type ReceiptStatus = "sending" | "sent" | "delivered" | "read" | "failed";
+
+export interface MessageWithDeliveryStatus extends ChatMessage {
+  deliveryStatus?: ReceiptStatus;
+}
 
 /**
- * Derives one message's status from `useReceipts`' per-conversation
- * watermark (`ReceiptState`: `deliveredSeq`, `readMessageId`) — Chatpack
- * tracks receipts as "read/delivered up to here", not a per-message ledger,
- * which is also why apps conventionally show this indicator only on the
- * sender's *last* message rather than on every bubble (repeating it on
- * every prior message would just be restating the same watermark).
+ * Derives one message's delivery/read status from optimistic state and `useReceipts` watermark.
  */
-export function resolveReceiptStatus(message: ChatMessage, receipt: ChatReceiptState | null | undefined): ReceiptStatus {
-  if (!receipt) return "sent";
+export function resolveReceiptStatus(
+  message: MessageWithDeliveryStatus,
+  receipt: ChatReceiptState | null | undefined,
+): ReceiptStatus {
+  if (message.deliveryStatus === "sending") return "sending";
+  if (message.deliveryStatus === "failed") return "failed";
+  if (!receipt) return message.deliveryStatus ?? "sent";
   if (receipt.readMessageId === message.id) return "read";
   if (receipt.deliveredSeq !== undefined && message.seq <= receipt.deliveredSeq) return "delivered";
-  return "sent";
+  return message.deliveryStatus ?? "sent";
 }
 
 export interface ReadReceiptProps {
   status: ReceiptStatus;
+  variant?: "icon" | "text";
   style?: StyleProp<TextStyle>;
   className?: string;
 }
 
 const LABEL: Record<ReceiptStatus, string> = {
+  sending: "Sending...",
   sent: "Sent",
   delivered: "Delivered",
   read: "Read",
+  failed: "Failed to send",
+};
+
+const ICONS: Record<ReceiptStatus, string> = {
+  sending: "🕒",
+  sent: "✓",
+  delivered: "✓✓",
+  read: "✓✓",
+  failed: "⚠️",
 };
 
 /**
- * The small status line under your own sent message. Deliberately just
- * text, not a tri-state checkmark icon set — swap this for your own
- * icon-based version by not using it at all; `resolveReceiptStatus` is the
- * part worth reusing.
- *
- * Intentionally has no opinion on *which* message to render this under —
- * typically only your own last message in the list, computed in your
- * `ItemComponent` (e.g. `index === messages.length - 1 && message.senderId === currentUserId`).
+ * The status indicator under your own sent message.
+ * Supports WhatsApp-style icons (🕒, ✓, ✓✓, ⚠️) via variant="icon" or text via variant="text".
  */
-export function ReadReceipt({ status, style, className }: ReadReceiptProps) {
+export function ReadReceipt({ status, variant = "text", style, className }: ReadReceiptProps) {
   const { state } = useChatUI();
+
+  const isRead = status === "read";
+  const isFailed = status === "failed";
+  const color = isFailed
+    ? "#EF4444"
+    : isRead && variant === "icon"
+      ? "#34B7F1" // WhatsApp blue double-check
+      : state.theme.colors.mutedForeground;
+
+  const content = variant === "icon" ? ICONS[status] : LABEL[status];
+
   return (
     <Text
-      style={[{ color: state.theme.colors.mutedForeground, fontSize: state.theme.typography.timestamp }, style]}
+      style={[
+        {
+          color,
+          fontSize: variant === "icon" ? 12 : state.theme.typography.timestamp,
+          fontWeight: isRead ? "700" : "400",
+        },
+        style,
+      ]}
       {...classNameProps(className)}
     >
-      {LABEL[status]}
+      {content}
     </Text>
   );
 }

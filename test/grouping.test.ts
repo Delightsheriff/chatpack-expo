@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ChatMessage } from "../src/types";
-import { isSameGroup, isDifferentCalendarDay, formatDateMarker, formatTimestamp } from "../src/utils/grouping";
+import {
+  isSameGroup,
+  isDifferentCalendarDay,
+  formatDateMarker,
+  formatTimestamp,
+  formatConversationTimestamp,
+} from "../src/utils/grouping";
 
 function message(overrides: Partial<ChatMessage> & { senderId: string; createdAt: string }): ChatMessage {
   return {
@@ -85,5 +91,26 @@ describe("formatDateMarker", () => {
 describe("formatTimestamp", () => {
   it("produces a non-empty locale time string", () => {
     expect(formatTimestamp(new Date("2026-08-26T14:30:00.000Z")).length).toBeGreaterThan(0);
+  });
+});
+
+describe("formatConversationTimestamp", () => {
+  it("renders time for today", () => {
+    const now = new Date("2026-08-26T12:00:00.000Z");
+    const result = formatConversationTimestamp(new Date("2026-08-26T10:00:00.000Z"), now);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).not.toBe("Yesterday");
+  });
+
+  it("renders Yesterday for yesterday", () => {
+    const now = new Date("2026-08-26T12:00:00.000Z");
+    const result = formatConversationTimestamp(new Date("2026-08-25T12:00:00.000Z"), now);
+    expect(result).toBe("Yesterday");
+  });
+
+  it("renders short date for older messages", () => {
+    const now = new Date("2026-08-26T12:00:00.000Z");
+    const result = formatConversationTimestamp(new Date("2026-08-01T12:00:00.000Z"), now);
+    expect(result).toContain("Aug");
   });
 });

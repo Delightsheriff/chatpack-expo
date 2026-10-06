@@ -8,23 +8,20 @@ export type {
   ChatForwardProvenance,
   ChatTypingIndicator,
   ChatReceiptState,
+  ChatConversationSummary,
 } from "./types";
 
 export { lightTheme, darkTheme } from "./theme/tokens";
 export type { ChatTheme, ChatColors, ChatSpacing, ChatRadius, ChatTypography } from "./theme/tokens";
 
-// message/, attachment/, marker/, and scroller/ each already curate their
-// own public surface in their own index.ts (that's the one list worth
-// hand-maintaining — it's short and changes rarely). Re-listing every name
-// a second time here bought nothing but a second place to forget to update
-// (architecture review, 2026-08-26, candidate 6) — `export *` collapses
-// that to one sync point instead of two. `Attachment`/`attachmentsFromMetadata`
-// are re-exported from both message/ and attachment/ (the same binding,
-// not a naming collision) since `Message.Attachment` needs them too.
 export * from "./components/message";
 export * from "./components/attachment";
 export * from "./components/scroller";
 export * from "./components/marker";
+export * from "./components/list";
+
+export { Avatar } from "./components/Avatar";
+export type { AvatarProps } from "./components/Avatar";
 
 export { ScrollFade } from "./utils/ScrollFade";
 export type { ScrollFadeProps } from "./utils/ScrollFade";
@@ -58,5 +55,7 @@ export {
   isDifferentCalendarDay,
   formatDateMarker,
   formatTimestamp,
+  formatConversationTimestamp,
   DEFAULT_GROUPING_WINDOW_MS,
 } from "./utils/grouping";
+

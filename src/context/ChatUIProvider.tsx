@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from "react";
 import { useColorScheme } from "react-native";
 import { lightTheme, darkTheme, type ChatTheme } from "../theme/tokens";
 import { createRequiredContext } from "../utils/createRequiredContext";
+import type { ChatMessage } from "../types";
 
 /**
  * Everything a message-level component needs to know but shouldn't fetch or
@@ -27,7 +28,9 @@ export interface ChatUIActions {
   onReact?: ((messageId: string, emoji: string) => void) | undefined;
   onDeleteMessage?: ((messageId: string) => void) | undefined;
   onCopyMessage?: ((messageId: string) => void) | undefined;
+  onForwardMessage?: ((messageId: string) => void) | undefined;
   onOpenAttachment?: ((attachmentId: string, messageId: string) => void) | undefined;
+  onOpenActions?: ((message: ChatMessage) => void) | undefined;
 }
 
 interface ChatUIContextValue {
@@ -51,7 +54,9 @@ export function ChatUIProvider({
   onReact,
   onDeleteMessage,
   onCopyMessage,
+  onForwardMessage,
   onOpenAttachment,
+  onOpenActions,
   children,
 }: ChatUIProviderProps) {
   const colorScheme = useColorScheme();
@@ -59,9 +64,9 @@ export function ChatUIProvider({
   const value = useMemo<ChatUIContextValue>(
     () => ({
       state: { currentUserId, theme: theme ?? (colorScheme === "dark" ? darkTheme : lightTheme) },
-      actions: { onReply, onReact, onDeleteMessage, onCopyMessage, onOpenAttachment },
+      actions: { onReply, onReact, onDeleteMessage, onCopyMessage, onForwardMessage, onOpenAttachment, onOpenActions },
     }),
-    [currentUserId, theme, colorScheme, onReply, onReact, onDeleteMessage, onCopyMessage, onOpenAttachment],
+    [currentUserId, theme, colorScheme, onReply, onReact, onDeleteMessage, onCopyMessage, onForwardMessage, onOpenAttachment, onOpenActions],
   );
 
   return <ChatUIContext.Provider value={value}>{children}</ChatUIContext.Provider>;

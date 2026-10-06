@@ -51,7 +51,7 @@ export function SwipeToReply({
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-10, 10])
-    .onUpdate((event) => {
+    .onUpdate((event: any) => {
       "worklet";
       const raw = event.translationX * sign;
       const clamped = Math.max(0, Math.min(raw, threshold * MAX_DRAG_MULTIPLIER));

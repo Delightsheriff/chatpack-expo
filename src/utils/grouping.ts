@@ -47,3 +47,24 @@ export function formatDateMarker(date: Date, now: Date = new Date()): string {
 export function formatTimestamp(date: Date): string {
   return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+
+/**
+ * Compact timestamp for a chat-list row: clock time for today, "Yesterday", or a short date.
+ */
+export function formatConversationTimestamp(date: Date, now: Date = new Date()): string {
+  const isSameDay = (x: Date, y: Date) =>
+    x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  if (isSameDay(date, now)) return formatTimestamp(date);
+  if (isSameDay(date, yesterday)) return "Yesterday";
+
+  const sameYear = date.getFullYear() === now.getFullYear();
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+}

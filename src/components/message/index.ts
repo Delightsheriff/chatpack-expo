@@ -5,6 +5,7 @@ import { MessageContent } from "./MessageContent";
 import { MessageFooter } from "./MessageFooter";
 import { MessageGroup } from "./MessageGroup";
 import { Bubble } from "./Bubble";
+import { BubbleQuote } from "./BubbleQuote";
 import { BubbleReactions } from "./BubbleReactions";
 import { Attachment } from "../attachment";
 import { MessageQuickReactions } from "./QuickReactions";
@@ -33,6 +34,7 @@ export const Message = Object.assign(MessageRoot, {
   Footer: MessageFooter,
   Group: MessageGroup,
   Bubble,
+  BubbleQuote,
   BubbleReactions,
   Attachment,
   QuickReactions: MessageQuickReactions,
@@ -50,6 +52,8 @@ export { MessageGroup } from "./MessageGroup";
 export type { MessageGroupProps } from "./MessageGroup";
 export { Bubble } from "./Bubble";
 export type { BubbleProps, BubbleVariant, BubbleAlign } from "./Bubble";
+export { BubbleQuote } from "./BubbleQuote";
+export type { BubbleQuoteProps } from "./BubbleQuote";
 export { BubbleReactions } from "./BubbleReactions";
 export type { BubbleReactionsProps, BubbleReactionsSide, BubbleReactionsAlign } from "./BubbleReactions";
 export { Attachment, attachmentsFromMetadata } from "../attachment";
