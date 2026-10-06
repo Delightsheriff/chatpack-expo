@@ -1,20 +1,19 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { DesignPreviewScreen } from "./screens/DesignPreviewScreen";
 
+// Pure UI preview — no chatpack-expo, no backend, just chatpack-expo-ui
+// with hardcoded mock messages. The real backend-wired flow (ChatListScreen /
+// ConversationScreen, lib/chat.ts) is still in this project, just not
+// rendered from here right now — swap this back to reach it again.
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <GestureHandlerRootView style={styles.flex}>
+      <DesignPreviewScreen />
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  flex: { flex: 1 },
 });
