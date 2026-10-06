@@ -32,6 +32,15 @@ export type {
   ReactChatClient,
 } from "@chatpack/client/react";
 
+export { useOptimisticMessages } from "./useOptimisticMessages";
+export type {
+  MessageDeliveryStatus,
+  OptimisticClientMessage,
+  UseOptimisticMessagesInput,
+  SendOptimisticMessageOptions,
+  UseOptimisticMessagesResult,
+} from "./useOptimisticMessages";
+
 export type { ExpoChatClientOptions } from "../options";
 export type { GetAuthHeaders } from "../event-source";
 export { attachAppStateRealtimeLifecycle, type RealtimeLifecycle } from "../app-state";
