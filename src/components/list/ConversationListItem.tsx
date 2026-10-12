@@ -1,77 +1,125 @@
 import type { ReactNode } from "react";
 import { Pressable, Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { useChatUI } from "../../context/ChatUIProvider";
-import { classNameProps } from "../../utils/classNameProps";
+import { useChatComponent, useChatUI } from "../../context/ChatUIProvider";
+import { useSlots } from "../../customization/useSlots";
+import { fontStyle } from "../../customization/resolveSlots";
+import type { SlotProps } from "../../customization/slots";
 import { formatConversationTimestamp } from "../../utils/grouping";
 import { Avatar } from "../Avatar";
 import { ReadReceipt } from "../ReadReceipt";
+import { UnreadBadge } from "../UnreadBadge";
 import type { ChatConversationSummary } from "../../types";
 
-export interface ConversationListItemProps {
+export interface ConversationListItemProps extends SlotProps<"ConversationListItem"> {
   conversation: ChatConversationSummary;
   onPress?: (() => void) | undefined;
+  onLongPress?: (() => void) | undefined;
   /**
    * A small badge next to the title — an emoji or flag overlay, e.g. a
-   * group icon or a country flag.
+   * group icon or a muted bell.
    */
   titleBadge?: ReactNode;
+  /** Replace the avatar for this row (e.g. a presence-dot wrapper). Default: `components.Avatar`. */
+  avatar?: ReactNode;
+  /** Defaults to `theme.avatar.listSize`. */
   avatarSize?: number;
+  /** Format the trailing timestamp. Default: time today, weekday this week, else date. */
+  formatTimestamp?: ((date: Date) => string) | undefined;
   style?: StyleProp<ViewStyle>;
   className?: string;
 }
 
 /**
  * One row in `ConversationList` — avatar, title, preview text, timestamp,
- * and an indicator that's either an unread-count badge (`unreadCount > 0`)
- * or a `ReadReceipt` icon (`receiptStatus`, when there's no unread count
- * to show instead) — never both.
+ * and an indicator that's either an unread badge (`unreadCount > 0`) or a
+ * read receipt (`receiptStatus`) — never both. Unread rows get a bolder
+ * title and a foreground-colored preview.
+ *
+ * Slots: `root`, `body`, `titleRow`, `title`, `preview`, `trailing`,
+ * `timestamp`, `badge`, `badgeText` (state: `hasUnread`, `pressed`).
  */
 export function ConversationListItem({
   conversation,
   onPress,
+  onLongPress,
   titleBadge,
-  avatarSize = 48,
+  avatar,
+  avatarSize,
+  formatTimestamp = formatConversationTimestamp,
   style,
   className,
+  styles: slotStyles,
+  classNames,
 }: ConversationListItemProps) {
-  const { state } = useChatUI();
-  const { colors, radius, spacing, typography } = state.theme;
+  const { state, config } = useChatUI();
+  const theme = state.theme;
+  const { colors, spacing, typography } = theme;
+  const AvatarComponent = useChatComponent("Avatar", Avatar);
+  const ReadReceiptComponent = useChatComponent("ReadReceipt", ReadReceipt);
+  const UnreadBadgeComponent = useChatComponent("UnreadBadge", UnreadBadge);
   const { title, avatarUrl, previewText, updatedAt, unreadCount, receiptStatus } = conversation;
 
   const hasUnread = Boolean(unreadCount && unreadCount > 0);
+  const slots = useSlots("ConversationListItem", { styles: slotStyles, classNames }, { hasUnread, pressed: false });
 
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.row, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm }, style]}
-      {...classNameProps(className)}
+      onLongPress={
+        onLongPress
+          ? () => {
+              config.haptics("longPress");
+              onLongPress();
+            }
+          : undefined
+      }
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.row,
+        { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, gap: spacing.md },
+        pressed && { backgroundColor: colors.surface },
+        slots.style("root", { pressed }),
+        style,
+      ]}
+      {...slots.className("root", className)}
     >
-      <Avatar uri={avatarUrl} name={title} size={avatarSize} />
-      <View style={styles.middle}>
-        <View style={styles.titleRow}>
-          <Text numberOfLines={1} style={[styles.title, { color: colors.foreground, fontSize: typography.body }]}>
+      {avatar ?? <AvatarComponent uri={avatarUrl} name={title} size={avatarSize ?? theme.avatar.listSize} />}
+      <View style={[styles.body, slots.style("body")]} {...slots.className("body")}>
+        <View style={[styles.titleRow, slots.style("titleRow")]} {...slots.className("titleRow")}>
+          <Text
+            numberOfLines={1}
+            style={[styles.title, { color: colors.foreground, fontSize: typography.body }, fontStyle(theme, hasUnread ? "bold" : "semibold"), slots.style("title")]}
+            {...slots.className("title")}
+          >
             {title}
           </Text>
           {titleBadge}
         </View>
         {previewText !== undefined && (
-          <Text numberOfLines={1} style={{ color: colors.mutedForeground, fontSize: typography.caption }}>
+          <Text
+            numberOfLines={2}
+            style={[
+              { color: hasUnread ? colors.foreground : colors.mutedForeground, fontSize: typography.caption + 1 },
+              fontStyle(theme),
+              slots.style("preview"),
+            ]}
+            {...slots.className("preview")}
+          >
             {previewText}
           </Text>
         )}
       </View>
-      <View style={styles.trailing}>
-        <Text style={{ color: colors.mutedForeground, fontSize: typography.timestamp }}>
-          {formatConversationTimestamp(new Date(updatedAt))}
+      <View style={[styles.trailing, slots.style("trailing")]} {...slots.className("trailing")}>
+        <Text
+          style={[{ color: hasUnread ? colors.accent : colors.mutedForeground, fontSize: typography.timestamp + 1 }, fontStyle(theme), slots.style("timestamp")]}
+          {...slots.className("timestamp")}
+        >
+          {formatTimestamp(new Date(updatedAt))}
         </Text>
         {hasUnread ? (
-          <View style={[styles.badge, { backgroundColor: colors.accent, borderRadius: radius.full }]}>
-            <Text style={{ color: colors.accentForeground, fontSize: typography.timestamp, fontWeight: "700" }}>
-              {unreadCount && unreadCount > 99 ? "99+" : unreadCount}
-            </Text>
-          </View>
+          <UnreadBadgeComponent count={unreadCount ?? 0} style={slots.style("badge")} textStyle={slots.style("badgeText")} />
         ) : (
-          receiptStatus && <ReadReceipt status={receiptStatus} variant="icon" />
+          receiptStatus && <ReadReceiptComponent status={receiptStatus} variant="icon" />
         )}
       </View>
     </Pressable>
@@ -83,7 +131,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  middle: {
+  body: {
     flex: 1,
     gap: 2,
   },
@@ -93,18 +141,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    fontWeight: "600",
     flexShrink: 1,
   },
   trailing: {
+    alignSelf: "stretch",
     alignItems: "flex-end",
-    gap: 4,
-  },
-  badge: {
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 6,
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    gap: 6,
+    paddingTop: 2,
   },
 });

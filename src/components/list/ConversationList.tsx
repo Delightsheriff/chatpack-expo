@@ -2,7 +2,8 @@ import { useCallback, type ComponentType, type ReactElement } from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { FlashList, type ListRenderItemInfo } from "@shopify/flash-list";
 import { registerNativeWindInterop } from "../../utils/nativewind-interop";
-import { classNameProps } from "../../utils/classNameProps";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 import { ConversationListItem } from "./ConversationListItem";
 import type { ChatConversationSummary } from "../../types";
 
@@ -11,11 +12,16 @@ registerNativeWindInterop(FlashList);
 export interface ConversationListRowProps {
   conversation: ChatConversationSummary;
   onPress?: (() => void) | undefined;
+  onLongPress?: (() => void) | undefined;
 }
 
-export interface ConversationListProps {
+export interface ConversationListProps extends SlotProps<"ConversationList"> {
   conversations: ChatConversationSummary[];
   onPressConversation?: (id: string) => void;
+  /** Long-press a row (fires the `longPress` haptic) — e.g. open a pin/mute/delete menu. */
+  onLongPressConversation?: (id: string) => void;
+  /** Shown when `conversations` is empty. */
+  ListEmptyComponent?: ReactElement;
   /**
    * Component reference for rendering each row. Defaults to ConversationListItem.
    */
@@ -29,11 +35,17 @@ export interface ConversationListProps {
 }
 
 /**
- * Flat virtualized conversation list.
+ * Virtualized conversation list (FlashList). On a native stack, set
+ * `contentInsetAdjustmentBehavior="automatic"` — the default here — so it
+ * scrolls under a large title and a header search bar correctly.
+ *
+ * Slots: `root`.
  */
 export function ConversationList({
   conversations,
   onPressConversation,
+  onLongPressConversation,
+  ListEmptyComponent,
   ItemComponent = ConversationListItem,
   ListHeaderComponent,
   onRefresh,
@@ -41,12 +53,19 @@ export function ConversationList({
   style,
   className,
   testID,
+  styles: slotStyles,
+  classNames,
 }: ConversationListProps) {
+  const slots = useSlots("ConversationList", { styles: slotStyles, classNames }, {});
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<ChatConversationSummary>) => (
-      <ItemComponent conversation={item} onPress={onPressConversation ? () => onPressConversation(item.id) : undefined} />
+      <ItemComponent
+        conversation={item}
+        onPress={onPressConversation ? () => onPressConversation(item.id) : undefined}
+        onLongPress={onLongPressConversation ? () => onLongPressConversation(item.id) : undefined}
+      />
     ),
-    [ItemComponent, onPressConversation],
+    [ItemComponent, onPressConversation, onLongPressConversation],
   );
 
   const keyExtractor = useCallback((item: ChatConversationSummary) => item.id, []);
@@ -54,14 +73,17 @@ export function ConversationList({
   return (
     <FlashList
       testID={testID}
-      style={[styles.list, style]}
+      style={[styles.list, slots.style("root"), style]}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardDismissMode="on-drag"
+      ListEmptyComponent={ListEmptyComponent}
       data={conversations}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       ListHeaderComponent={ListHeaderComponent}
       onRefresh={onRefresh}
       refreshing={onRefresh ? (refreshing ?? false) : undefined}
-      {...classNameProps(className)}
+      {...slots.className("root", className)}
     />
   );
 }

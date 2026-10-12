@@ -1,7 +1,9 @@
 import { Pressable, ScrollView, Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useChatUI } from "../../context/ChatUIProvider";
-import { classNameProps } from "../../utils/classNameProps";
+import { useChatComponent, useChatUI } from "../../context/ChatUIProvider";
+import { ChatIcon } from "../../customization/icons";
+import { useSlots } from "../../customization/useSlots";
+import { fontStyle } from "../../customization/resolveSlots";
+import type { SlotProps } from "../../customization/slots";
 import { Avatar } from "../Avatar";
 
 export interface ConversationStoryItem {
@@ -10,7 +12,7 @@ export interface ConversationStoryItem {
   avatarUrl?: string;
 }
 
-export interface ConversationStoryRowProps {
+export interface ConversationStoryRowProps extends SlotProps<"ConversationStoryRow"> {
   items: ConversationStoryItem[];
   onPressItem?: (id: string) => void;
   onPressAdd?: () => void;
@@ -19,7 +21,12 @@ export interface ConversationStoryRowProps {
   className?: string;
 }
 
-/** Horizontal story-style avatars row with Add action. */
+/**
+ * Horizontal story-style avatars row with an optional Add action.
+ *
+ * Slots: `root`, `content`, `item`, `name`, `addCircle`, `addLabel`
+ * (state: `pressed`).
+ */
 export function ConversationStoryRow({
   items,
   onPressItem,
@@ -27,35 +34,61 @@ export function ConversationStoryRow({
   avatarSize = 56,
   style,
   className,
+  styles: slotStyles,
+  classNames,
 }: ConversationStoryRowProps) {
-  const { state } = useChatUI();
-  const { colors, spacing, typography } = state.theme;
+  const { state, config } = useChatUI();
+  const theme = state.theme;
+  const { colors, spacing, typography } = theme;
+  const AvatarComponent = useChatComponent("Avatar", Avatar);
+  const slots = useSlots("ConversationStoryRow", { styles: slotStyles, classNames }, { pressed: false });
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.row, { paddingHorizontal: spacing.md, gap: spacing.md }]}
-      style={style}
-      {...classNameProps(className)}
+      contentContainerStyle={[styles.row, { paddingHorizontal: spacing.lg, gap: spacing.md }, slots.style("content")]}
+      style={[slots.style("root"), style]}
+      {...slots.className("root", className)}
     >
       {onPressAdd && (
-        <Pressable onPress={onPressAdd} style={styles.item}>
+        <Pressable
+          onPress={onPressAdd}
+          accessibilityRole="button"
+          accessibilityLabel={config.labels.addStory}
+          style={({ pressed }) => [styles.item, slots.style("item", { pressed })]}
+          {...slots.className("item")}
+        >
           <View
             style={[
               styles.addCircle,
               { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, borderColor: colors.border },
+              slots.style("addCircle"),
             ]}
+            {...slots.className("addCircle")}
           >
-            <Ionicons name="add" size={avatarSize * 0.4} color={colors.mutedForeground} />
+            <ChatIcon name="add" size={avatarSize * 0.4} color={colors.mutedForeground} />
           </View>
-          <Text style={{ color: colors.mutedForeground, fontSize: typography.caption }}>Add</Text>
+          <Text style={[{ color: colors.mutedForeground, fontSize: typography.caption }, fontStyle(theme), slots.style("addLabel")]} {...slots.className("addLabel")}>
+            {config.labels.addStory}
+          </Text>
         </Pressable>
       )}
       {items.map((item) => (
-        <Pressable key={item.id} onPress={() => onPressItem?.(item.id)} style={styles.item}>
-          <Avatar uri={item.avatarUrl} name={item.name} size={avatarSize} />
-          <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: typography.caption, maxWidth: avatarSize + 12 }}>
+        <Pressable
+          key={item.id}
+          onPress={() => onPressItem?.(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={item.name}
+          style={({ pressed }) => [styles.item, slots.style("item", { pressed })]}
+          {...slots.className("item")}
+        >
+          <AvatarComponent uri={item.avatarUrl} name={item.name} size={avatarSize} />
+          <Text
+            numberOfLines={1}
+            style={[{ color: colors.foreground, fontSize: typography.caption, maxWidth: avatarSize + 12 }, fontStyle(theme), slots.style("name")]}
+            {...slots.className("name")}
+          >
             {item.name}
           </Text>
         </Pressable>

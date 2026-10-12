@@ -23,6 +23,5 @@ export default defineConfig({
     "expo-symbols",
     "expo-haptics",
     "expo-clipboard",
-    "@expo/vector-icons",
   ],
 });
