@@ -69,8 +69,11 @@ export type { UnreadBadgeProps } from "./components/UnreadBadge";
 export { Composer } from "./components/Composer";
 export type { ComposerProps } from "./components/Composer";
 
-export { ChatKeyboardView } from "./components/ChatKeyboardView";
-export type { ChatKeyboardViewProps } from "./components/ChatKeyboardView";
+export { useComposer } from "./components/useComposer";
+export type { UseComposerOptions, UseComposerResult } from "./components/useComposer";
+
+export { ChatKeyboardView, ChatKeyboardScrollView, useChatKeyboard } from "./components/ChatKeyboardView";
+export type { ChatKeyboardViewProps, ChatKeyboardDockProps, KeyboardLiftBehavior } from "./components/ChatKeyboardView";
 
 export { MessageActionsSheet, buildDefaultMessageActions, DEFAULT_QUICK_REACTIONS } from "./components/MessageActionsSheet";
 export type { MessageActionsSheetProps, MessageAction } from "./components/MessageActionsSheet";

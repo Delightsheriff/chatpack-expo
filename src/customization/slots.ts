@@ -107,7 +107,7 @@ export interface ChatSlotRegistry {
 
   Composer: SlotDefinition<
     { root: ViewStyle; inputWrapper: ViewStyle; input: TextStyle; sendButton: ViewStyle },
-    { canSend: boolean; focused: boolean; pressed: boolean }
+    { canSend: boolean; pressed: boolean }
   >;
   ChatKeyboardView: SlotDefinition<{ root: ViewStyle }, Empty>;
   TypingIndicator: SlotDefinition<{ root: ViewStyle; dot: ViewStyle }, Empty>;

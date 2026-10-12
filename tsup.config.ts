@@ -19,6 +19,7 @@ export default defineConfig({
     "react-native-reanimated",
     "react-native-worklets",
     "react-native-keyboard-controller",
+    "react-native-safe-area-context",
     "expo-symbols",
     "expo-haptics",
     "expo-clipboard",
