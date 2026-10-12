@@ -18,6 +18,10 @@ export default defineConfig({
     "react-native-gesture-handler",
     "react-native-reanimated",
     "react-native-worklets",
+    "react-native-keyboard-controller",
+    "expo-symbols",
+    "expo-haptics",
+    "expo-clipboard",
     "@expo/vector-icons",
   ],
 });
