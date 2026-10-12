@@ -1,5 +1,22 @@
 {
   "name": "chatpack-expo-monorepo",
   "private": true,
-  "description": "React Native / Expo for Chatpack: transport adapter, native chat UI kit, and an example app."
+  "description": "React Native / Expo for Chatpack: transport adapter, native chat UI kit, and an example app.",
+  "packageManager": "npm@11.21.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "postinstall": "npm run build",
+    "build": "npm run build -w packages/chatpack-expo -w packages/chatpack-expo-ui",
+    "dev": "npm run dev -w packages/chatpack-expo-ui",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w packages/chatpack-expo -w packages/chatpack-expo-ui",
+    "example": "npm start -w apps/example",
+    "server": "npm start -w apps/server-test"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
 }
