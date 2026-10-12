@@ -1,0 +1,143 @@
+import type { ReactNode } from "react";
+import { Pressable, Text, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { useChatUI } from "../../context/ChatUIProvider";
+import type { ChatTheme } from "../../theme/tokens";
+import { useMessageContext } from "./context";
+import { classNameProps } from "../../utils/classNameProps";
+
+/**
+ * Ports shadcn's seven Bubble variants. `default` here means "the current
+ * user's own bubble" (shadcn's own description), not "no variant set" —
+ * `Message` picks it automatically from `isOwn` unless overridden.
+ */
+export type BubbleVariant = "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
+export type BubbleAlign = "start" | "end";
+
+export interface BubbleProps {
+  /**
+   * Defaults to derived from context: `message.role === "system"` →
+   * `"muted"`, else `isOwn` → `"default"` : `"secondary"`. Override for
+   * anything else — e.g. `"destructive"` for a failed send,
+   * `"ghost"` for unframed assistant text spanning the row.
+   */
+  variant?: BubbleVariant;
+  /**
+   * Defaults to derived from `isOwn`. shadcn's own guidance: prefer setting
+   * alignment on `Message`, not `Bubble` — this override exists for the
+   * same rare case as `variant`'s (rendering as if from someone else).
+   */
+  align?: BubbleAlign;
+  children?: ReactNode;
+  /**
+   * A `BubbleReactions` element, rendered as a sibling overlapping the
+   * bubble edge instead of as ordinary content — an explicit slot rather
+   * than scanning `children` for one by `displayName` (architecture
+   * review, 2026-08-26, candidate 7: string-matching a component's
+   * `displayName` silently stops working the moment someone wraps it in
+   * `memo()` or re-exports it under a different name; an explicit prop
+   * can't go stale that way).
+   */
+  reactions?: ReactNode;
+  /**
+   * A `BubbleQuote` element, rendered inside the bubble above `children` —
+   * the quoted-parent bar for a reply.
+   */
+  quote?: ReactNode;
+  /** Long-press handler — this component has no opinion on what happens next (open a menu, a sheet, nothing). */
+  onLongPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  className?: string;
+}
+
+function bubbleColors(theme: ChatTheme, variant: BubbleVariant) {
+  const { colors } = theme;
+  switch (variant) {
+    case "default":
+      return { background: colors.bubbleSent, foreground: colors.bubbleSentForeground, border: undefined };
+    case "secondary":
+      return { background: colors.bubbleReceived, foreground: colors.bubbleReceivedForeground, border: undefined };
+    case "muted":
+      return { background: colors.surface, foreground: colors.mutedForeground, border: undefined };
+    case "tinted":
+      return { background: `${colors.accent}22`, foreground: colors.accent, border: undefined };
+    case "outline":
+      return { background: "transparent", foreground: colors.foreground, border: colors.border };
+    case "ghost":
+      return { background: "transparent", foreground: colors.foreground, border: undefined };
+    case "destructive":
+      return { background: `${colors.destructive}22`, foreground: colors.destructive, border: undefined };
+  }
+}
+
+/**
+ * A bubble sizes to its content up to 80% of the row width, except
+ * `"ghost"`, which drops the max-width so assistant text/rich content can
+ * span the full row — matching shadcn's own note on the variant.
+ */
+const MAX_WIDTH_PERCENT = "80%";
+
+/**
+ * The message surface — corresponds to shadcn's `Bubble` + `BubbleContent`
+ * collapsed into one component (RN has no separate polymorphic-`render`
+ * concept the way the web version does; wrap `Bubble` in your own
+ * `Pressable`/`Link` if you need bubble-as-button/link semantics beyond
+ * `onLongPress`).
+ *
+ * Pass a `BubbleReactions` element via the `reactions` prop to render it
+ * as an overlapping pill row per shadcn's model; `children` is always
+ * ordinary bubble content.
+ */
+export function Bubble({ variant, align, children, quote, reactions, onLongPress, style, className }: BubbleProps) {
+  const { state } = useChatUI();
+  const { message, isOwn, align: contextAlign, groupedWithPrevious, groupedWithNext } = useMessageContext();
+  const { radius, spacing, typography } = state.theme;
+
+  const resolvedVariant: BubbleVariant = variant ?? (message.role === "system" ? "muted" : isOwn ? "default" : "secondary");
+  const resolvedAlign: BubbleAlign = align ?? contextAlign;
+  const { background, foreground, border } = bubbleColors(state.theme, resolvedVariant);
+  const isGhost = resolvedVariant === "ghost";
+
+  return (
+    <View
+      style={[
+        styles.wrap,
+        {
+          alignSelf: resolvedAlign === "end" ? "flex-end" : "flex-start",
+          maxWidth: isGhost ? undefined : MAX_WIDTH_PERCENT,
+        },
+      ]}
+    >
+      <Pressable
+        onLongPress={onLongPress}
+        style={[
+          styles.bubble,
+          {
+            backgroundColor: background,
+            borderRadius: isGhost ? 0 : radius.lg,
+            paddingHorizontal: isGhost ? 0 : spacing.md,
+            paddingVertical: isGhost ? 0 : spacing.sm,
+            ...(border ? { borderWidth: StyleSheet.hairlineWidth, borderColor: border } : null),
+            // Flatten the corner shared with an adjacent grouped bubble, so a
+            // run of messages from one sender reads as one continuous shape.
+            ...(!isGhost && resolvedAlign === "end"
+              ? { borderTopRightRadius: groupedWithPrevious ? radius.sm : radius.lg, borderBottomRightRadius: groupedWithNext ? radius.sm : radius.lg }
+              : !isGhost
+                ? { borderTopLeftRadius: groupedWithPrevious ? radius.sm : radius.lg, borderBottomLeftRadius: groupedWithNext ? radius.sm : radius.lg }
+                : null),
+          },
+          style,
+        ]}
+        {...classNameProps(className)}
+      >
+        {quote}
+        {children ?? <Text style={{ color: foreground, fontSize: typography.body }}>{message.deletedAt ? "Message deleted" : message.body}</Text>}
+      </Pressable>
+      {reactions}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {},
+  bubble: {},
+});
