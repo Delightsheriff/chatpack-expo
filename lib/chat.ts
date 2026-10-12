@@ -1,9 +1,13 @@
+import Constants from "expo-constants";
 import { createExpoChatClient } from "chatpack-expo/react";
 import { presenceClient, receiptsClient, typingClient } from "@chatpack/client/plugins";
 
-// Point at the local test server from chatpack-expo-server-test/server.ts.
-// From the iOS Simulator, "localhost" resolves to the host Mac.
-export const BASE_URL = "http://localhost:3000";
+// The local test server (chatpack-expo-server-test/server.ts) runs on the
+// same machine as Metro. Use the host Expo Go loaded the bundle from, so a
+// physical phone on Wi-Fi, the Android emulator and the iOS simulator all
+// reach it — "localhost" on a real phone is the phone itself.
+const devHost = Constants.expoConfig?.hostUri?.split(":")[0];
+export const BASE_URL = `http://${devHost ?? "localhost"}:3000`;
 
 /** The demo users the local server accepts via the trusted x-user-id header. */
 export const DEMO_USERS = ["alice", "bob", "carol", "dave"] as const;
