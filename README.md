@@ -1,45 +1,57 @@
 # chatpack-expo-ui
 
-shadcn/ui's chat component set — `Message`, `Bubble`, `Attachment`, `Marker`,
-`MessageScroller` — ported to React Native/Expo. Structural and behavioral
-parity with the shadcn originals, not just a visual re-skin: turn anchoring,
-live-edge follow, swipe-to-reply, hold-to-react, read receipts, typing
-indicators, and cross-platform keyboard push-up are all here, translated to
-RN's actual platform primitives rather than approximated.
+Native-feeling chat UI for Expo / React Native — shadcn/ui's chat component
+set (`Message`, `Bubble`, `Attachment`, `Marker`, `MessageScroller`) ported to
+RN's real platform primitives, plus the mobile pieces a messenger needs:
+keyboard-synced composer, swipe-to-reply, haptics, native SF Symbols /
+Material Symbols icons, read receipts, typing indicator, actions sheet and a
+conversation list.
 
-**Backend-agnostic.** Nothing in this package imports `@chatpack/client` or
-any other backend SDK — every component works off this package's own
-`ChatMessage`/`ChatTypingIndicator`/`ChatReceiptState` types (see `src/types.ts`).
-Feed it plain objects matching those shapes from any data source and every
-component renders identically. It happens to be a natural fit for
-[`chatpack-expo`](https://github.com/chddaniel/chatpack) +
-`@chatpack/client`'s hooks — `ChatMessage` mirrors `ClientMessage`
-(`Jsonify<MessageWithDetails>`) field-for-field, so a real Chatpack app's
-data satisfies it with zero conversion — but that's a consequence of the
-shape matching, not a dependency.
+**Fully customizable.** Every component is restyleable at four levels —
+tokens, named slots, provider overrides, and headless hooks — so the same
+components can be an iMessage clone, WhatsApp, or a flat Slack-style
+transcript without forking (see [Customization](#customization); the example
+app ships all three).
 
-This package does not reimplement any backend's domain logic — it only
-renders whatever data shape you give it.
+**Backend-agnostic.** Nothing here imports `@chatpack/client` — components
+work off this package's own `ChatMessage`/`ChatTypingIndicator`/
+`ChatReceiptState` types (`src/types.ts`), which mirror Chatpack's
+`ClientMessage` field-for-field, so Chatpack data needs zero conversion and
+any other backend just has to match the shape.
 
 ## Install
 
 ```sh
-npm install chatpack-expo-ui @expo/ui @shopify/flash-list expo-image expo-linear-gradient react-native-reanimated react-native-worklets react-native-gesture-handler
+npx expo install chatpack-expo-ui @shopify/flash-list expo-image expo-linear-gradient \
+  expo-symbols expo-haptics expo-clipboard react-native-keyboard-controller \
+  react-native-reanimated react-native-worklets react-native-gesture-handler \
+  react-native-safe-area-context
 ```
 
-Using it with Chatpack specifically, also install the transport adapter and
-client SDK:
+All of these are in Expo Go (SDK 57). With Chatpack as the backend, also
+`npm install chatpack-expo @chatpack/client`.
 
-```sh
-npm install chatpack-expo @chatpack/client
+## Setup
+
+Once, at your app root (Expo Router: `app/_layout.tsx`):
+
+```tsx
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
+
+export default function RootLayout() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>   {/* swipe-to-reply */}
+      <KeyboardProvider>                            {/* ChatKeyboardView */}
+        <Stack />                                   {/* Expo Router provides SafeAreaProvider */}
+      </KeyboardProvider>
+    </GestureHandlerRootView>
+  );
+}
 ```
 
-`@expo/ui` requires Expo SDK 57+ (true native SwiftUI/Jetpack Compose
-views, not JS-rendered RN views) — this package targets Expo apps
-specifically, unlike `chatpack-expo` itself which also works in bare RN.
-
-Wrap your app root in `GestureHandlerRootView` (from
-`react-native-gesture-handler`) — required for `SwipeToReply`.
+No `softwareKeyboardLayoutMode` is needed on Android — keyboard-controller
+handles it.
 
 ### Optional: NativeWind / Tailwind
 
@@ -59,6 +71,107 @@ underlying `FlashList`, which NativeWind doesn't auto-patch) is wired up
 via `cssInterop` automatically, and is a no-op if `nativewind` isn't
 installed. Other styling systems work the same way — `className` is
 additive, never a replacement for `style`.
+
+
+## Customization
+
+Four layers, from lightest to heaviest. Reach for the lightest that works.
+
+### 1. Tokens — `createTheme`
+
+```ts
+import { createTheme, darkTheme } from "chatpack-expo-ui";
+
+const brand = {
+  colors: { accent: "#7C3AED", bubbleSent: "#7C3AED", receiptRead: "#7C3AED" },
+  bubble: { radius: 22, groupedRadius: 6, maxWidth: 0.78 },
+  avatar: { messageSize: 28, radius: 8 },              // rounded squares
+  fonts: { regular: "Inter-Regular", semibold: "Inter-SemiBold", bold: "Inter-Bold" },
+};
+export const theme = { light: createTheme(brand), dark: createTheme(brand, darkTheme) };
+
+<ChatUIProvider currentUserId={me} theme={theme}>…</ChatUIProvider>
+```
+
+Tokens: `colors` (incl. `receiptRead`, `badge`, `online`, `overlay`),
+`spacing`, `radius`, `typography`, `fonts` (family per weight — Android
+custom fonts need it), `bubble` (radius, grouped radius, padding, max
+width), `avatar`. A `{ light, dark }` pair follows the device appearance.
+
+### 2. Slots — `styles` / `classNames` / `theme.components`
+
+Every component names its inner parts. Style them per instance, or app-wide
+through `theme.components`. A slot value can be a function of component
+state — that's what makes very different designs possible:
+
+```ts
+createTheme({
+  components: {
+    Bubble: {
+      // iMessage "tail": a tight corner only on the last bubble of a run
+      bubble: ({ bubbleAlign, groupedWithNext }) =>
+        groupedWithNext ? null : bubbleAlign === "end" ? { borderBottomRightRadius: 4 } : { borderBottomLeftRadius: 4 },
+      text: { fontSize: 17 },
+    },
+    Composer: { root: { borderTopWidth: 0 }, inputWrapper: { borderRadius: 20 } },
+    ConversationListItem: { title: ({ hasUnread }) => (hasUnread ? { color: "#7C3AED" } : null) },
+  },
+});
+
+<Composer styles={{ input: { fontFamily: "Inter" } }} classNames={{ root: "px-4" }} />
+```
+
+The full list of components, slot names and the state each slot function
+receives is one file: [`src/customization/slots.ts`](src/customization/slots.ts).
+Order: component defaults → `theme.components` → instance `styles` →
+instance `style` (root).
+
+### 3. Provider overrides — labels, icons, components, haptics, clipboard
+
+```tsx
+<ChatUIProvider
+  currentUserId={me}
+  labels={{ composerPlaceholder: "Escribe un mensaje", receipt: { read: "Leído" } }}
+  icons={{
+    send: { ios: "paperplane.fill", android: "send" },        // native symbol names
+    reply: ({ size, color }) => <Feather name="corner-up-left" size={size} color={color} />, // or anything
+  }}
+  components={{ SendButton: MySendButton, Avatar: MyAvatar }} // Avatar, ReadReceipt, SendButton, UnreadBadge, ScrollButton
+  haptics={(event) => event !== "send" && defaultHaptics(event)} // or false
+  copyText={(text) => myClipboard.write(text)}
+/>
+```
+
+Icons default to SF Symbols on iOS and Material Symbols on Android/web via
+`expo-symbols`; use `<ChatIcon name="…" />` in your own pieces to stay on
+the same set. Haptic events: `send`, `longPress`, `swipeReply`,
+`reaction`, `selection`, `copy`.
+
+### 4. Headless — hooks and composition
+
+Compound components (`Message.Avatar`, `Message.Bubble`, …) mean you can
+drop or replace any piece of a row. For a completely custom input bar keep
+the behavior with `useComposer` (draft, `canSend`, `send` + haptic,
+whitespace normalization via `normalizeMessageBody`); `useMessageContext`,
+`useMessageScroller`, `useChatTheme`, `useChatConfig` and `useSlots` let you
+build new components on the same state and customization system.
+
+## Keyboard
+
+```tsx
+<ChatKeyboardView keyboardLiftBehavior="always">   {/* "whenAtEnd" | "persistent" | "never" */}
+  <MessageScroller ItemComponent={Row} ListFooterComponent={<TypingIndicator typing={typing} />} />
+  <ChatKeyboardView.Dock>
+    <Composer onSend={send} topAccessory={replyBar} />
+  </ChatKeyboardView.Dock>
+</ChatKeyboardView>
+```
+
+Built on react-native-keyboard-controller's `KeyboardChatScrollView`: the
+transcript lifts with the keyboard frame-by-frame, the list swipes the
+keyboard away interactively, and the Dock rides on the keyboard while
+padding the home indicator only when it's closed. `mode="avoiding"` wraps a
+`KeyboardAvoidingView` instead, for transcripts that aren't `MessageScroller`.
 
 ## Composition
 
@@ -167,15 +280,16 @@ export function ConversationScreen({ conversationId, currentUserId }) {
       <ChatUIProvider
         currentUserId={currentUserId}
         onReply={(id) => console.log("reply", id)}
-        onReact={(id, emoji) => chat.api.reactions.add({ messageId: id, emoji })}
-        onDeleteMessage={(id) => chat.api.messages.delete({ messageId: id })}
+        onReact={(id, emoji) => chat.messages.react({ messageId: id, emoji })}
+        onDeleteMessage={(id) => chat.messages.delete({ messageId: id })}
       >
         <ChatKeyboardView>
-          <MessageScrollerProvider messages={data?.messages ?? []} isTurnAnchor={isTurnAnchor} scrollPreviousItemPeek={24} autoScroll>
-            <MessageScroller ItemComponent={MemoMessageRow} />
+          <MessageScrollerProvider messages={[...(data?.messages ?? [])].reverse()} isTurnAnchor={isTurnAnchor} autoScroll>
+            <MessageScroller ItemComponent={MemoMessageRow} ListFooterComponent={<TypingIndicator typing={typing} />} />
           </MessageScrollerProvider>
-          <TypingIndicator typing={typing} />
-          <Composer onSend={(body) => chat.api.messages.send({ conversationId, body })} />
+          <ChatKeyboardView.Dock>
+            <Composer onSend={(body) => chat.messages.send({ conversationId, body })} />
+          </ChatKeyboardView.Dock>
         </ChatKeyboardView>
       </ChatUIProvider>
     </GestureHandlerRootView>
@@ -183,9 +297,9 @@ export function ConversationScreen({ conversationId, currentUserId }) {
 }
 ```
 
-Exact hook/API method names (`chat.api.reactions.add`, etc.) depend on
-`@chatpack/client`'s actual surface — check `chatpack-expo/react`'s
-re-exports before copying this verbatim.
+`useMessages` returns newest-first; `MessageScrollerProvider` wants oldest
+first, hence the `reverse()`. The example app (`chatpack-expo-example`) has
+the complete, running version of this screen.
 
 ## Component reference
 
@@ -202,10 +316,11 @@ re-exports before copying this verbatim.
 | `Marker` (`default`/`border`/`separator`, `Icon`/`Content`) | Same shape. `role="status"` → `accessibilityLiveRegion="polite"` on Android, `AccessibilityInfo.announceForAccessibility` on iOS (no live-region equivalent there). Shimmer is `MarkerContent`'s `shimmer` prop, not a `Marker` variant. |
 | Swipe to reply | `SwipeToReply` — `Gesture.Pan`, `transform`-only animation. A standalone wrapper, not baked into `Message`/`Bubble`. |
 | Hold to react | `Message.QuickReactions` / `QuickReactionBar` — a lighter inline alternative (or addition) to the full `MessageActionsSheet`. |
-| Long-press actions | `MessageActionsSheet` — native `@expo/ui` `BottomSheet`. `actions` prop takes an arbitrary `MessageAction[]` (forward/report/pin/anything); `buildDefaultMessageActions()` gives the reply/copy/delete starting point to extend. |
-| Read receipts | `ReadReceipt` + `resolveReceiptStatus()` — derived from Chatpack's per-conversation receipt watermark (`deliveredSeq`/`readMessageId`), not a per-message ledger; convention (matching every messaging app) is to render only under the sender's *last* message. |
+| Long-press actions | `MessageActionsSheet` — one per screen, driven by `onOpenActions`. Quick-reaction row plus an icon action list; `buildDefaultMessageActions(message, actions, config)` gives Reply / Copy (built in, system clipboard) / Forward / Delete to extend. |
+| Read receipts | `ReadReceipt` (native tick icons or text labels) + `resolveReceiptStatus()` — derived from Chatpack's per-conversation receipt watermark (`deliveredSeq`/`readMessageId`), not a per-message ledger; convention (matching every messaging app) is to render only under the sender's *last* message. |
 | Typing indicator | `TypingIndicator` — bouncing-dots bubble off `useTyping()`. |
-| Keyboard push-up | `ChatKeyboardView` — the iOS/Android `KeyboardAvoidingView` behavior difference actually handled; Android also needs `"softwareKeyboardLayoutMode": "resize"` under `"android"` in `app.json`. |
+| Keyboard push-up | `ChatKeyboardView` + `ChatKeyboardView.Dock` on react-native-keyboard-controller — see [Keyboard](#keyboard). |
+| Composer | `Composer` (icon `SendButton`, top/leading/trailing accessories, auto-height, whitespace normalization) or headless `useComposer`. |
 | `scroll-fade` utility | `ScrollFade` (`expo-linear-gradient`), used internally by `Attachment.Group` and exported standalone. |
 | `shimmer` utility | `ShimmerText`, used by `AttachmentTitle`/`MarkerContent`, exported standalone. |
 
@@ -244,19 +359,14 @@ sign to fork the file into your app instead of fighting the package's shape.
 
 ## Status
 
-Full structural/behavioral rebuild against shadcn's actual chat component
-docs (`Message`, `Bubble`, `Attachment`, `Marker`, `MessageScroller`), then
-an architecture pass (2026-08-26) that collapsed several duplicated
-patterns found across the rebuild and, separately, decoupled every
-component from `@chatpack/client`'s types in favor of this package's own
-`ChatMessage`/`ChatTypingIndicator`/`ChatReceiptState` shapes — backend
-data only needs to match those shapes, not come from Chatpack specifically.
+Rebuilt for a native feel and full customization (October 2026): theme
+builder, slot registry, provider overrides, expo-symbols icons, haptics,
+clipboard, keyboard-controller layout, headless composer. Typechecks, builds
+and has unit tests (`npm test`) for theme merging, slot resolution, labels,
+message normalization and grouping.
 
-Typechecks and builds clean against `@expo/ui@57`, `@shopify/flash-list@2`,
-`react-native-gesture-handler@3`, on React Native 0.86 / React 19.2.
-Grouping/date-marker logic has unit test coverage (`npm test`). **Not yet
-run in a real Expo app** — the `MessageScroller` rebuild in particular
-(`maintainVisibleContentPosition` mapping, `scrollToIndex` peek math) is
-implemented per FlashList v2's documented API but unverified on-device.
-That's the next step before either this package or `chatpack-expo` is
-published.
+Run in Expo Go on the iOS 27 simulator (iPhone 18 Pro) via the example app:
+conversation list, header search, native tabs, all four designs, sending,
+long-press actions sheet, reply bar and receipts verified on screen. **Not yet
+verified:** the software-keyboard lift and interactive dismiss (the test ran
+with a hardware keyboard attached), Android, and real devices.
