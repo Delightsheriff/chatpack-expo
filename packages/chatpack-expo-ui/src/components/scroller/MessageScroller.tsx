@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useRef, type ComponentType } from "react";
+import { useCallback, useEffect, useRef, type ComponentType, type ReactElement } from "react";
 import {
   View,
   StyleSheet,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
 import { FlashList, type ListRenderItemInfo, type ViewToken } from "@shopify/flash-list";
 import type { ChatMessage } from "../../types";
 import { registerNativeWindInterop } from "../../utils/nativewind-interop";
-import { classNameProps } from "../../utils/classNameProps";
+import { useChatComponent } from "../../context/ChatUIProvider";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
+import { ChatKeyboardScrollView, useChatKeyboard } from "../ChatKeyboardView";
 import { useMessageScrollerContext } from "./context";
-import { MessageScrollerButton } from "./MessageScrollerButton";
+import { MessageScrollerButton, type MessageScrollerButtonProps } from "./MessageScrollerButton";
 
 registerNativeWindInterop(FlashList);
 
@@ -25,7 +29,7 @@ export interface MessageItemProps {
   isAnchor: boolean;
 }
 
-export interface MessageScrollerProps {
+export interface MessageScrollerProps extends SlotProps<"MessageScroller"> {
   /**
    * A component reference, not an inline closure — stable across renders so
    * FlashList doesn't treat every render as a new item type
@@ -34,8 +38,21 @@ export interface MessageScrollerProps {
   ItemComponent: ComponentType<MessageItemProps>;
   /** Fired when the reader scrolls toward older history (the start of the — now non-inverted — list). Wire to your pagination cursor. */
   onLoadOlder?: () => void;
-  /** Swap the built-in "↓ Latest" pill for your own — same component-reference pattern as `ItemComponent`. Pass `null` to disable it. */
-  ButtonComponent?: ComponentType<{ direction?: "start" | "end" }> | null;
+  /** Swap the built-in jump-to-latest button for your own (or set `components.ScrollButton` app-wide). Pass `null` to disable it. */
+  ButtonComponent?: ComponentType<MessageScrollerButtonProps> | null;
+  /** Rendered above the oldest message — e.g. a "loading older" spinner or a conversation intro. */
+  ListHeaderComponent?: ReactElement | null;
+  /** Rendered below the newest message — e.g. a `TypingIndicator` that scrolls with the transcript. */
+  ListFooterComponent?: ReactElement | null;
+  /**
+   * Scroll component for the underlying FlashList. Inside a
+   * `ChatKeyboardView` (chat mode) this defaults to `ChatKeyboardScrollView`
+   * — content lifts with the keyboard and the list swipes it away
+   * interactively. Outside one, the plain ScrollView.
+   */
+  renderScrollComponent?: ComponentType<ScrollViewProps> | undefined;
+  /** FlashList `drawDistance`. Default 500 — extra rows rendered off-screen so keyboard lifts don't reveal blank space. */
+  drawDistance?: number | undefined;
   style?: StyleProp<ViewStyle>;
   className?: string;
   testID?: string;
@@ -65,7 +82,25 @@ const SCROLLABLE_EPSILON_PX = 4;
  * feature not being disabled, which also covers prepended-history position
  * preservation (its "content added at top" case).
  */
-export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = MessageScrollerButton, style, className, testID }: MessageScrollerProps) {
+export function MessageScroller({
+  ItemComponent,
+  onLoadOlder,
+  ButtonComponent,
+  ListHeaderComponent,
+  ListFooterComponent,
+  renderScrollComponent,
+  drawDistance = 500,
+  style,
+  className,
+  testID,
+  styles: slotStyles,
+  classNames,
+}: MessageScrollerProps) {
+  const keyboard = useChatKeyboard();
+  const DefaultButton = useChatComponent("ScrollButton", MessageScrollerButton);
+  const ResolvedButton = ButtonComponent === undefined ? DefaultButton : ButtonComponent;
+  const scrollComponent = renderScrollComponent ?? (keyboard?.mode === "chat" ? ChatKeyboardScrollView : undefined);
+  const slots = useSlots("MessageScroller", { styles: slotStyles, classNames }, {});
   const {
     listRef,
     messages,
@@ -153,11 +188,11 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, slots.style("root")]} {...slots.className("root")}>
       <FlashList
         ref={listRef}
         testID={testID}
-        style={[styles.list, style]}
+        style={[styles.list, slots.style("list"), style]}
         data={messages}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
@@ -171,9 +206,15 @@ export function MessageScroller({ ItemComponent, onLoadOlder, ButtonComponent = 
         onViewableItemsChanged={handleViewableItemsChanged}
         onScroll={handleScroll}
         scrollEventThrottle={32}
-        {...classNameProps(className)}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        drawDistance={drawDistance}
+        ListHeaderComponent={ListHeaderComponent}
+        ListFooterComponent={ListFooterComponent}
+        {...(scrollComponent ? { renderScrollComponent: scrollComponent } : null)}
+        {...slots.className("list", className)}
       />
-      {ButtonComponent && <ButtonComponent direction="end" />}
+      {ResolvedButton && <ResolvedButton direction="end" />}
     </View>
   );
 }

@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { useChatTheme } from "../../context/ChatUIProvider";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 import { useMessageAvatarAlignment } from "./avatar-alignment";
 import { useMessageContext } from "./context";
-import { classNameProps } from "../../utils/classNameProps";
 
-export interface MessageAvatarProps {
+export interface MessageAvatarProps extends SlotProps<"MessageAvatar"> {
   children: ReactNode;
   /**
    * Force this avatar to render visibly even mid-group. Defaults to
@@ -18,29 +20,33 @@ export interface MessageAvatarProps {
   className?: string;
 }
 
-const AVATAR_SLOT_SIZE = 32;
-
 /**
  * The avatar slot — corresponds to shadcn's `MessageAvatar`. Bottom-anchors
  * to the row by default (via `Message`'s `alignItems: "flex-end"`), then
  * shifts up by the sibling `MessageFooter`'s measured height so it stays
  * aligned with the bubble surface rather than the footer, matching
- * shadcn's own behavior.
+ * shadcn's own behavior. Sized by `theme.avatar.messageSize`.
+ *
+ * Slots: `root`.
  */
-export function MessageAvatar({ children, visible, style, className }: MessageAvatarProps) {
-  const { groupedWithNext } = useMessageContext();
+export function MessageAvatar({ children, visible, style, className, styles: slotStyles, classNames }: MessageAvatarProps) {
+  const theme = useChatTheme();
+  const { isOwn, align, groupedWithPrevious, groupedWithNext } = useMessageContext();
   const { footerHeight } = useMessageAvatarAlignment();
   const isVisible = visible ?? !groupedWithNext;
+  const size = theme.avatar.messageSize;
+  const slots = useSlots("MessageAvatar", { styles: slotStyles, classNames }, {
+    isOwn,
+    align,
+    groupedWithPrevious,
+    groupedWithNext,
+    visible: isVisible,
+  });
 
   return (
     <View
-      style={[
-        styles.slot,
-        { marginBottom: footerHeight },
-        !isVisible && styles.hidden,
-        style,
-      ]}
-      {...classNameProps(className)}
+      style={[{ width: size, height: size, marginBottom: footerHeight }, !isVisible && styles.hidden, slots.style("root"), style]}
+      {...slots.className("root", className)}
     >
       {isVisible && children}
     </View>
@@ -48,10 +54,6 @@ export function MessageAvatar({ children, visible, style, className }: MessageAv
 }
 
 const styles = StyleSheet.create({
-  slot: {
-    width: AVATAR_SLOT_SIZE,
-    height: AVATAR_SLOT_SIZE,
-  },
   hidden: {
     opacity: 0,
   },

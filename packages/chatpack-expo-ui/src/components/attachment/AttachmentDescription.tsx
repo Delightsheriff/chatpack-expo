@@ -1,9 +1,11 @@
 import { Text, type StyleProp, type TextStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import { useAttachmentContext } from "./context";
-import { classNameProps } from "../../utils/classNameProps";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
+import { fontStyle } from "../../customization/resolveSlots";
 
-export interface AttachmentDescriptionProps {
+export interface AttachmentDescriptionProps extends SlotProps<"AttachmentDescription"> {
   children: string;
   style?: StyleProp<TextStyle>;
   className?: string;
@@ -16,16 +18,18 @@ export interface AttachmentDescriptionProps {
  * the destructive color on `state="error"`, so keep the failure reason in
  * the text itself rather than relying on color alone.
  */
-export function AttachmentDescription({ children, style, className }: AttachmentDescriptionProps) {
+export function AttachmentDescription({ children, style, className, styles: slotStyles, classNames }: AttachmentDescriptionProps) {
   const { state: ui } = useChatUI();
-  const { state } = useAttachmentContext();
+  const attachment = useAttachmentContext();
+  const { state } = attachment;
+  const slots = useSlots("AttachmentDescription", { styles: slotStyles, classNames }, attachment);
   const color = state === "error" ? ui.theme.colors.destructive : ui.theme.colors.mutedForeground;
 
   return (
     <Text
       numberOfLines={1}
-      style={[{ color, fontSize: ui.theme.typography.caption }, style]}
-      {...classNameProps(className)}
+      style={[{ color, fontSize: ui.theme.typography.caption }, fontStyle(ui.theme), slots.style("text"), style]}
+      {...slots.className("text", className)}
     >
       {children}
     </Text>

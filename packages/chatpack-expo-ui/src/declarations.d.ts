@@ -74,15 +74,3 @@ declare module "@shopify/flash-list" {
     scrollToTop(params?: any): void;
   }
 }
-
-declare module "@expo/vector-icons" {
-  import React from "react";
-  import type { TextProps } from "react-native";
-  export interface IconProps extends TextProps {
-    name: string;
-    size?: number;
-    color?: string;
-  }
-  export const Ionicons: React.ComponentType<IconProps>;
-  export const MaterialIcons: React.ComponentType<IconProps>;
-}

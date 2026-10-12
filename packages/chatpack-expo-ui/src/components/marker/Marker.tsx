@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AccessibilityInfo, Platform, View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
 import type { MarkerVariant } from "./context";
-import { classNameProps } from "../../utils/classNameProps";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 
-export interface MarkerProps {
+export interface MarkerProps extends SlotProps<"Marker"> {
   variant?: MarkerVariant;
   /**
    * Set `"status"` for streaming/in-progress markers ("Thinking…", a
@@ -40,10 +41,13 @@ function extractText(node: ReactNode): string {
  * The root marker element — corresponds to shadcn's `Marker`. No
  * render-prop polymorphism (RN has no equivalent); wrap `Marker` in your
  * own `Pressable`/`Link` for link/button semantics.
+ *
+ * Slots: `root`, `line` (separator rules; state: `variant`).
  */
-export function Marker({ variant = "default", role, accessibilityLabel, children, style, className }: MarkerProps) {
+export function Marker({ variant = "default", role, accessibilityLabel, children, style, className, styles: slotStyles, classNames }: MarkerProps) {
   const { state } = useChatUI();
   const { colors, spacing } = state.theme;
+  const slots = useSlots("Marker", { styles: slotStyles, classNames }, { variant });
 
   const text = useMemo(() => extractText(children), [children]);
   const previousText = useRef<string | null>(null);
@@ -63,15 +67,16 @@ export function Marker({ variant = "default", role, accessibilityLabel, children
         variant === "separator" ? styles.separatorRow : styles.inlineRow,
         { paddingVertical: spacing.xs, paddingHorizontal: spacing.md, gap: spacing.xs },
         variant === "border" && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+        slots.style("root"),
         style,
       ]}
-      {...classNameProps(className)}
+      {...slots.className("root", className)}
     >
       {variant === "separator" ? (
         <>
-          <View style={[styles.line, { backgroundColor: colors.border }]} />
+          <View style={[styles.line, { backgroundColor: colors.border }, slots.style("line")]} {...slots.className("line")} />
           {children}
-          <View style={[styles.line, { backgroundColor: colors.border }]} />
+          <View style={[styles.line, { backgroundColor: colors.border }, slots.style("line")]} {...slots.className("line")} />
         </>
       ) : (
         children

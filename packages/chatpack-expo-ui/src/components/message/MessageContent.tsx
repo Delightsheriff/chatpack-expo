@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { useChatTheme } from "../../context/ChatUIProvider";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 import { useMessageContext } from "./context";
-import { classNameProps } from "../../utils/classNameProps";
 
-export interface MessageContentProps {
+export interface MessageContentProps extends SlotProps<"MessageContent"> {
   /** `MessageHeader`, the message surface (`Bubble`), and `MessageFooter`, in that order. */
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -14,20 +16,27 @@ export interface MessageContentProps {
  * Wraps the header, message surface, and footer in one column —
  * corresponds to shadcn's `MessageContent`. Purely a layout container; the
  * avatar-offset behavior lives in `MessageAvatar`/`MessageFooter`
- * themselves, not here, so this stays a plain wrapper with no internal
- * child-detection logic to fight if you swap in your own surface.
+ * themselves, not here.
  *
- * Aligns its children (header/bubble/footer) to the same edge as
- * `Message`'s resolved `align`, read from context rather than re-derived,
- * so this can never disagree with an `align` override on `Message`.
+ * Its max width is `theme.bubble.maxWidth` of the row — the cap every
+ * bubble inside it sizes against.
+ *
+ * Slots: `root`.
  */
-export function MessageContent({ children, style, className }: MessageContentProps) {
-  const { align } = useMessageContext();
+export function MessageContent({ children, style, className, styles: slotStyles, classNames }: MessageContentProps) {
+  const theme = useChatTheme();
+  const { isOwn, align, groupedWithPrevious, groupedWithNext } = useMessageContext();
+  const slots = useSlots("MessageContent", { styles: slotStyles, classNames }, { isOwn, align, groupedWithPrevious, groupedWithNext });
 
   return (
     <View
-      style={[styles.column, { alignItems: align === "end" ? "flex-end" : "flex-start" }, style]}
-      {...classNameProps(className)}
+      style={[
+        styles.column,
+        { maxWidth: `${theme.bubble.maxWidth * 100}%`, alignItems: align === "end" ? "flex-end" : "flex-start" },
+        slots.style("root"),
+        style,
+      ]}
+      {...slots.className("root", className)}
     >
       {children}
     </View>
@@ -36,7 +45,6 @@ export function MessageContent({ children, style, className }: MessageContentPro
 
 const styles = StyleSheet.create({
   column: {
-    maxWidth: "80%",
     flexShrink: 1,
   },
 });

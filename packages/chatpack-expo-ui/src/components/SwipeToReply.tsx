@@ -1,17 +1,21 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated";
 import { useChatUI } from "../context/ChatUIProvider";
-import { classNameProps } from "../utils/classNameProps";
+import { ChatIcon } from "../customization/icons";
+import { useSlots } from "../customization/useSlots";
+import type { SlotProps } from "../customization/slots";
 
-export interface SwipeToReplyProps {
+export interface SwipeToReplyProps extends SlotProps<"SwipeToReply"> {
   onReply: () => void;
   children: ReactNode;
   /** Horizontal drag distance (px) that commits the reply. */
   threshold?: number;
   /** Which way the row is swiped to reveal the reply icon — `"end"` = the direction the *other* person's messages sit toward, mirrored per RTL by `I18nManager` at the call site if your app supports it. */
   direction?: "start" | "end";
+  /** Replace the revealed icon (default: the `reply` icon in a muted circle). */
+  icon?: ReactNode;
   style?: StyleProp<ViewStyle>;
   className?: string;
 }
@@ -22,45 +26,51 @@ const MAX_DRAG_MULTIPLIER = 1.4;
 /**
  * Wraps a `<Message>` row (or anything) with a horizontal swipe gesture
  * that reveals a reply icon and calls `onReply` past `threshold` — the
- * iMessage/WhatsApp "swipe to reply" pattern. Only `transform`
- * (`translateX`) animates, kept on the UI thread via Reanimated's worklets
- * (`animation-gpu-properties`), and the gesture is `Gesture.Pan` from
- * `react-native-gesture-handler`, not the deprecated `PanResponder`
- * (`animation-gesture-detector-press`'s underlying rule: prefer the Gesture
- * API for anything beyond a plain tap).
+ * iMessage/WhatsApp "swipe to reply" pattern. Only `transform` animates,
+ * on the UI thread. The `swipeReply` haptic fires the moment the drag
+ * crosses the threshold (not on release), the way native messengers
+ * signal "let go now to reply".
  *
- * Requires your app root to be wrapped in `GestureHandlerRootView` (from
- * `react-native-gesture-handler`) — this component doesn't do that for
- * you, since it may already be wrapped once at the navigation root.
+ * Requires your app root to be wrapped in `GestureHandlerRootView`.
  *
- * This is a standalone wrapper, not baked into `Message`/`Bubble`, so a
- * message row that doesn't want swipe-to-reply just doesn't get wrapped in
- * it — no `enableSwipe` boolean to thread through the compound components.
+ * Slots: `root` (the moving row), `icon` (the revealed icon wrapper).
  */
 export function SwipeToReply({
   onReply,
   children,
   threshold = DEFAULT_THRESHOLD,
   direction = "end",
+  icon,
   style,
   className,
+  styles: slotStyles,
+  classNames,
 }: SwipeToReplyProps) {
-  const { state } = useChatUI();
+  const { state, config } = useChatUI();
+  const { colors, radius } = state.theme;
+  const slots = useSlots("SwipeToReply", { styles: slotStyles, classNames }, { direction });
   const translateX = useSharedValue(0);
+  const crossed = useSharedValue(false);
   const sign = direction === "end" ? 1 : -1;
+  const { haptics } = config;
+  const fireHaptic = () => haptics("swipeReply");
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-10, 10])
-    .onUpdate((event: any) => {
+    .onUpdate((event: { translationX: number }) => {
       "worklet";
       const raw = event.translationX * sign;
       const clamped = Math.max(0, Math.min(raw, threshold * MAX_DRAG_MULTIPLIER));
       translateX.value = clamped * sign;
+      const isPast = clamped > threshold;
+      if (isPast && !crossed.value) runOnJS(fireHaptic)();
+      crossed.value = isPast;
     })
     .onEnd(() => {
       "worklet";
       const committed = Math.abs(translateX.value) > threshold;
       translateX.value = withSpring(0, { damping: 18, stiffness: 220 });
+      crossed.value = false;
       if (committed) runOnJS(onReply)();
     });
 
@@ -79,10 +89,15 @@ export function SwipeToReply({
         style={[styles.icon, direction === "end" ? styles.iconStart : styles.iconEnd, iconStyle]}
         pointerEvents="none"
       >
-        <Text style={{ color: state.theme.colors.mutedForeground, fontSize: state.theme.typography.body }}>↩</Text>
+        <View
+          style={[styles.iconCircle, { backgroundColor: colors.surface, borderRadius: radius.full }, slots.style("icon")]}
+          {...slots.className("icon")}
+        >
+          {icon ?? <ChatIcon name="reply" size={16} color={colors.mutedForeground} />}
+        </View>
       </Animated.View>
       <GestureDetector gesture={gesture}>
-        <Animated.View style={[rowStyle, style]} {...classNameProps(className)}>
+        <Animated.View style={[rowStyle, slots.style("root"), style]} {...slots.className("root", className)}>
           {children}
         </Animated.View>
       </GestureDetector>
@@ -102,5 +117,11 @@ const styles = StyleSheet.create({
   },
   iconEnd: {
     right: 12,
+  },
+  iconCircle: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
