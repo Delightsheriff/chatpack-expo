@@ -70,6 +70,7 @@ export { Composer } from "./components/Composer";
 export type { ComposerProps } from "./components/Composer";
 
 export { useComposer } from "./components/useComposer";
+export { normalizeMessageBody } from "./utils/normalizeMessageBody";
 export type { UseComposerOptions, UseComposerResult } from "./components/useComposer";
 
 export { ChatKeyboardView, ChatKeyboardScrollView, useChatKeyboard } from "./components/ChatKeyboardView";

@@ -1,5 +1,5 @@
-import type { ReactNode, Ref } from "react";
-import { View, TextInput, StyleSheet, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
+import { useState, type ReactNode, type Ref } from "react";
+import { Platform, View, TextInput, StyleSheet, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
 import { useChatComponent, useChatUI } from "../context/ChatUIProvider";
 import { useSlots } from "../customization/useSlots";
 import { fontStyle } from "../customization/resolveSlots";
@@ -8,8 +8,10 @@ import { SendButton } from "./SendButton";
 import { useComposer, type UseComposerResult } from "./useComposer";
 
 export interface ComposerProps extends SlotProps<"Composer"> {
-  /** Called with the trimmed text; the draft clears right after. */
+  /** Called with the normalized text (see `normalize`); the draft clears right after. */
   onSend: (body: string) => void;
+  /** Draft cleanup before sending — default strips surrounding blank lines/whitespace. See `useComposer`. */
+  normalize?: ((text: string) => string) | undefined;
   /** Controlled draft (saved drafts, edit mode). Pair with `onChangeText`. */
   value?: string | undefined;
   onChangeText?: ((text: string) => void) | undefined;
@@ -30,6 +32,8 @@ export interface ComposerProps extends SlotProps<"Composer"> {
    * Default: `components.SendButton`.
    */
   sendButton?: ReactNode | ((composer: UseComposerResult) => ReactNode);
+  /** Max input height before it scrolls internally. Default 140. */
+  maxInputHeight?: number | undefined;
   /** Return key sends instead of inserting a newline (tablet/desktop style). Default `false`. */
   sendOnSubmit?: boolean | undefined;
   /** Passed through to the `TextInput` (autoFocus, keyboardAppearance, …). */
@@ -54,6 +58,7 @@ export interface ComposerProps extends SlotProps<"Composer"> {
  */
 export function Composer({
   onSend,
+  normalize,
   value,
   onChangeText,
   defaultValue,
@@ -64,6 +69,7 @@ export function Composer({
   topAccessory,
   sendButton,
   sendOnSubmit = false,
+  maxInputHeight = 140,
   inputProps,
   inputRef,
   style,
@@ -75,8 +81,15 @@ export function Composer({
   const { state, config } = useChatUI();
   const theme = state.theme;
   const { colors, radius, spacing, typography } = theme;
-  const composer = useComposer({ onSend, value, onChangeText, defaultValue });
+  const composer = useComposer({ onSend, value, onChangeText, defaultValue, normalize });
   const SendButtonComponent = useChatComponent("SendButton", SendButton);
+  // Explicit height from the measured content: a multiline TextInput on iOS
+  // grows as you type but doesn't reliably shrink back when its value is
+  // cleared after a send.
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
+  const lineHeight = Math.round(typography.body * 1.3);
+  const minHeight = lineHeight + spacing.sm * 2;
+  const inputHeight = composer.value.length === 0 ? minHeight : Math.min(Math.max(contentHeight ?? minHeight, minHeight), maxInputHeight);
   const slots = useSlots("Composer", { styles: slotStyles, classNames }, { canSend: composer.canSend, pressed: false });
 
   const setRefs = (node: TextInput | null) => {
@@ -133,9 +146,16 @@ export function Composer({
             accessibilityLabel={placeholder ?? config.labels.composerPlaceholder}
             {...(sendOnSubmit ? { submitBehavior: "submit" as const, onSubmitEditing: composer.send, returnKeyType: "send" as const } : null)}
             {...inputProps}
+            onContentSizeChange={(event) => {
+              // iOS reports the text height alone; Android includes the vertical padding.
+              const padding = Platform.OS === "ios" ? spacing.sm * 2 : 0;
+              setContentHeight(Math.ceil(event.nativeEvent.contentSize.height) + padding);
+              inputProps?.onContentSizeChange?.(event);
+            }}
+            scrollEnabled={inputHeight >= maxInputHeight}
             style={[
               styles.input,
-              { color: colors.foreground, fontSize: typography.body, paddingVertical: spacing.sm },
+              { color: colors.foreground, fontSize: typography.body, lineHeight, paddingTop: spacing.sm, paddingBottom: spacing.sm, height: inputHeight },
               fontStyle(theme),
               slots.style("input"),
             ]}
@@ -166,7 +186,5 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    maxHeight: 140,
-    paddingTop: 8,
   },
 });
