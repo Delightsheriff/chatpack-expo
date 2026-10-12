@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
-import { classNameProps } from "../../utils/classNameProps";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 
 export type BubbleReactionsSide = "top" | "bottom";
 export type BubbleReactionsAlign = "start" | "end";
 
-export interface BubbleReactionsProps {
+export interface BubbleReactionsProps extends SlotProps<"BubbleReactions"> {
   side?: BubbleReactionsSide;
   align?: BubbleReactionsAlign;
   children: ReactNode;
@@ -39,10 +40,13 @@ export interface BubbleReactionsProps {
  *   }
  * />
  * ```
+ *
+ * Slots: `root`.
  */
-export function BubbleReactions({ side = "bottom", align = "end", children, style, className }: BubbleReactionsProps) {
+export function BubbleReactions({ side = "bottom", align = "end", children, style, className, styles: slotStyles, classNames }: BubbleReactionsProps) {
   const { state } = useChatUI();
   const { colors, radius, spacing } = state.theme;
+  const slots = useSlots("BubbleReactions", { styles: slotStyles, classNames }, { side, align });
 
   return (
     <View
@@ -52,9 +56,10 @@ export function BubbleReactions({ side = "bottom", align = "end", children, styl
         { transform: [{ translateY: side === "top" ? -8 : 8 }] },
         align === "start" ? styles.alignStart : styles.alignEnd,
         { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 2, gap: 2 },
+        slots.style("root"),
         style,
       ]}
-      {...classNameProps(className)}
+      {...slots.className("root", className)}
     >
       {children}
     </View>

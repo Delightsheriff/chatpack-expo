@@ -1,10 +1,11 @@
 import { useCallback, type ReactNode } from "react";
 import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from "react-native";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 import { useMessageAvatarAlignment } from "./avatar-alignment";
 import { useMessageContext } from "./context";
-import { classNameProps } from "../../utils/classNameProps";
 
-export interface MessageFooterProps {
+export interface MessageFooterProps extends SlotProps<"MessageFooter"> {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   className?: string;
@@ -16,10 +17,13 @@ export interface MessageFooterProps {
  * reports its own rendered height so the sibling `MessageAvatar` can offset
  * itself by exactly that amount and stay aligned with the bubble instead
  * of dropping to the footer's bottom edge.
+ *
+ * Slots: `root`.
  */
-export function MessageFooter({ children, style, className }: MessageFooterProps) {
-  const { align } = useMessageContext();
+export function MessageFooter({ children, style, className, styles: slotStyles, classNames }: MessageFooterProps) {
+  const { isOwn, align, groupedWithPrevious, groupedWithNext } = useMessageContext();
   const { reportFooterHeight } = useMessageAvatarAlignment();
+  const slots = useSlots("MessageFooter", { styles: slotStyles, classNames }, { isOwn, align, groupedWithPrevious, groupedWithNext });
 
   const onLayout = useCallback(
     (event: LayoutChangeEvent) => reportFooterHeight(event.nativeEvent.layout.height),
@@ -29,8 +33,12 @@ export function MessageFooter({ children, style, className }: MessageFooterProps
   return (
     <View
       onLayout={onLayout}
-      style={[{ flexDirection: "row", alignSelf: align === "end" ? "flex-end" : "flex-start", marginTop: 2 }, style]}
-      {...classNameProps(className)}
+      style={[
+        { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: align === "end" ? "flex-end" : "flex-start", marginTop: 2 },
+        slots.style("root"),
+        style,
+      ]}
+      {...slots.className("root", className)}
     >
       {children}
     </View>

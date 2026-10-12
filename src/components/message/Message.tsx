@@ -2,18 +2,19 @@ import { useMemo, useState, useCallback, type ReactNode } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import type { ChatMessage } from "../../types";
 import { useChatUI } from "../../context/ChatUIProvider";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 import { isSameGroup } from "../../utils/grouping";
 import { MessageContext, type MessageAlign } from "./context";
 import { MessageAvatarAlignmentContext } from "./avatar-alignment";
-import { classNameProps } from "../../utils/classNameProps";
 
 export type { MessageAlign };
 
-export interface MessageProps {
+export interface MessageProps extends SlotProps<"Message"> {
   message: ChatMessage;
   /** Neighbors in the (chronologically ascending) list, for grouping — pass `undefined` at the edges. */
-  previousMessage?: ChatMessage;
-  nextMessage?: ChatMessage;
+  previousMessage?: ChatMessage | undefined;
+  nextMessage?: ChatMessage | undefined;
   /** Grouping window override; see `isSameGroup`. */
   groupingWindowMs?: number;
   /** Defaults to derived from `isOwn` (`"end"` for your own messages) — override for group-chat cases where alignment isn't purely ownership. */
@@ -33,8 +34,9 @@ export interface MessageProps {
  * ownership/grouping once and provides it via context to
  * `MessageAvatar`/`Bubble`/`MessageFooter`, so a consumer composes
  * `<Message><MessageAvatar/><MessageContent>...</MessageContent></Message>`
- * rather than configuring one component with a dozen booleans
- * (`architecture-compound-components`).
+ * rather than configuring one component with a dozen booleans.
+ *
+ * Slots: `root`.
  */
 export function Message({
   message,
@@ -45,8 +47,11 @@ export function Message({
   children,
   style,
   className,
+  styles: slotStyles,
+  classNames,
 }: MessageProps) {
   const { state } = useChatUI();
+  const { spacing } = state.theme;
   const isOwn = message.senderId === state.currentUserId;
   const resolvedAlign: MessageAlign = align ?? (isOwn ? "end" : "start");
 
@@ -65,6 +70,13 @@ export function Message({
     [message, isOwn, resolvedAlign, previousMessage, nextMessage, groupingWindowMs],
   );
 
+  const slots = useSlots("Message", { styles: slotStyles, classNames }, {
+    isOwn,
+    align: resolvedAlign,
+    groupedWithPrevious: contextValue.groupedWithPrevious,
+    groupedWithNext: contextValue.groupedWithNext,
+  });
+
   return (
     <MessageContext.Provider value={contextValue}>
       <MessageAvatarAlignmentContext.Provider value={avatarAlignmentValue}>
@@ -80,11 +92,12 @@ export function Message({
             // used to double-flip that and push own messages to the left
             // instead — the same bug CSS's `row-reverse` catches everyone
             // out on at least once.
-            { flexDirection: resolvedAlign === "end" ? "row-reverse" : "row" },
-            contextValue.groupedWithPrevious ? styles.tightTop : styles.spacedTop,
+            { flexDirection: resolvedAlign === "end" ? "row-reverse" : "row", paddingHorizontal: spacing.md, gap: spacing.sm },
+            { marginTop: contextValue.groupedWithPrevious ? 2 : spacing.md },
+            slots.style("root"),
             style,
           ]}
-          {...classNameProps(className)}
+          {...slots.className("root", className)}
         >
           {children}
         </View>
@@ -95,16 +108,7 @@ export function Message({
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  spacedTop: {
-    marginTop: 12,
-  },
-  tightTop: {
-    marginTop: 2,
   },
 });
 
