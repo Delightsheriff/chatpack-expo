@@ -1,4 +1,5 @@
 import { createExpoChatClient } from "chatpack-expo/react";
+import { presenceClient, receiptsClient, typingClient } from "@chatpack/client/plugins";
 
 // Point at the local test server from chatpack-expo-server-test/server.ts.
 // From the iOS Simulator, "localhost" resolves to the host Mac.
@@ -13,6 +14,9 @@ export function createChat(userId: string) {
     baseURL: BASE_URL,
     userId,
     getAuthHeaders: () => ({ "x-user-id": userId }),
+    // Must match the server's plugins (typing/presence/receipts) — without
+    // them useTyping/useReceipts stay null and the UI never shows dots or ticks.
+    plugins: [typingClient(), presenceClient(), receiptsClient()],
     debugRealtime: true,
   });
 }
