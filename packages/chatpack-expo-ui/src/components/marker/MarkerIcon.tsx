@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import { classNameProps } from "../../utils/classNameProps";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 
-export interface MarkerIconProps {
+export interface MarkerIconProps extends SlotProps<"MarkerIcon"> {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   className?: string;
@@ -16,13 +17,14 @@ export interface MarkerIconProps {
  * meaning. For an icon-only marker with no `MarkerContent`, set
  * `accessibilityLabel` on the `Marker` root instead.
  */
-export function MarkerIcon({ children, style, className }: MarkerIconProps) {
+export function MarkerIcon({ children, style, className, styles: slotStyles, classNames }: MarkerIconProps) {
+  const slots = useSlots("MarkerIcon", { styles: slotStyles, classNames }, {});
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={style}
-      {...classNameProps(className)}
+      style={[slots.style("root"), style]}
+      {...slots.className("root", className)}
     >
       {children}
     </View>

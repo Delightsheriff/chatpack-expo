@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { useChatUI } from "../../context/ChatUIProvider";
-import { classNameProps } from "../../utils/classNameProps";
+import { useOptionalAttachmentContext } from "./context";
+import { useSlots } from "../../customization/useSlots";
+import type { SlotProps } from "../../customization/slots";
 
-export interface AttachmentActionProps {
+export interface AttachmentActionProps extends SlotProps<"AttachmentAction"> {
   onPress?: () => void;
   /**
    * Required, not optional: `AttachmentAction` is icon-only by design (per
@@ -18,16 +20,18 @@ export interface AttachmentActionProps {
 }
 
 /** An icon-only action button — corresponds to shadcn's `AttachmentAction`. */
-export function AttachmentAction({ onPress, accessibilityLabel, children, style, className }: AttachmentActionProps) {
+export function AttachmentAction({ onPress, accessibilityLabel, children, style, className, styles: slotStyles, classNames }: AttachmentActionProps) {
   const { state } = useChatUI();
+  const attachment = useOptionalAttachmentContext();
+  const slots = useSlots("AttachmentAction", { styles: slotStyles, classNames }, { ...attachment, pressed: false });
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       hitSlop={8}
-      style={[styles.button, { borderRadius: state.theme.radius.full }, style]}
-      {...classNameProps(className)}
+      style={({ pressed }) => [styles.button, { borderRadius: state.theme.radius.full, opacity: pressed ? 0.6 : 1 }, slots.style("root", { pressed }), style]}
+      {...slots.className("root", className)}
     >
       {children}
     </Pressable>

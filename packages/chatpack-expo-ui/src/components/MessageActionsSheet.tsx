@@ -1,62 +1,99 @@
-import React from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import type { ReactNode } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import type { ChatMessage } from "../types";
-import { useChatUI, type ChatUIActions } from "../context/ChatUIProvider";
+import { useChatUI, type ChatUIActions, type ChatUIConfig } from "../context/ChatUIProvider";
+import { ChatIcon, type ChatIconName } from "../customization/icons";
+import { useSlots } from "../customization/useSlots";
+import { fontStyle } from "../customization/resolveSlots";
+import type { SlotProps } from "../customization/slots";
+import { DEFAULT_QUICK_REACTIONS } from "./QuickReactionBar";
 
-export const DEFAULT_QUICK_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
+export { DEFAULT_QUICK_REACTIONS };
 
 export interface MessageAction {
   id: string;
   label: string;
+  /** A package icon name, or any node. */
+  icon?: ChatIconName | ReactNode;
+  /** Renders in the destructive color (Delete, Report…). */
+  destructive?: boolean;
+  /** @deprecated Styling hint from the first version; use slot styles instead. */
   variant?: "filled" | "outlined" | "text";
   onPress: () => void;
 }
 
+/**
+ * The default action list for a message: Reply, Copy, Forward, Delete —
+ * each only when it applies (an action prop is wired, the message has
+ * text, it isn't deleted). Copy works with no wiring at all: it uses
+ * `config.copyText` (system clipboard) unless `onCopyMessage` replaces it.
+ *
+ * Spread and extend it for app-specific actions:
+ *
+ * ```ts
+ * const actions = [...buildDefaultMessageActions(message, ui.actions, ui.config),
+ *   { id: "pin", label: "Pin", icon: "add", onPress: () => pin(message.id) }];
+ * ```
+ */
 export function buildDefaultMessageActions(
   message: ChatMessage,
   actions: ChatUIActions,
+  config?: Pick<ChatUIConfig, "labels" | "copyText" | "haptics">,
 ): MessageAction[] {
+  const labels = config?.labels;
+  const deleted = message.deletedAt !== null;
   const list: MessageAction[] = [];
+  if (deleted) return list;
+
   if (actions.onReply) {
-    list.push({ id: "reply", label: "Reply", onPress: () => actions.onReply?.(message.id) });
+    list.push({ id: "reply", label: labels?.reply ?? "Reply", icon: "reply", onPress: () => actions.onReply?.(message.id) });
   }
-  if (actions.onCopyMessage) {
-    list.push({
-      id: "copy",
-      label: "Copy Text",
-      variant: "outlined",
-      onPress: () => actions.onCopyMessage?.(message.id),
-    });
+  const copy = actions.onCopyMessage
+    ? () => actions.onCopyMessage?.(message.id)
+    : config
+      ? () => {
+          void config.copyText(message.body);
+          config.haptics("copy");
+        }
+      : undefined;
+  if (copy && message.body.length > 0) {
+    list.push({ id: "copy", label: labels?.copy ?? "Copy", icon: "copy", onPress: copy });
+  }
+  if (actions.onForwardMessage) {
+    list.push({ id: "forward", label: labels?.forward ?? "Forward", icon: "forward", onPress: () => actions.onForwardMessage?.(message.id) });
   }
   if (actions.onDeleteMessage) {
     list.push({
       id: "delete",
-      label: "Delete Message",
-      variant: "text",
+      label: labels?.delete ?? "Delete",
+      icon: "delete",
+      destructive: true,
       onPress: () => actions.onDeleteMessage?.(message.id),
     });
   }
   return list;
 }
 
-export interface MessageActionsSheetProps {
+export interface MessageActionsSheetProps extends SlotProps<"MessageActionsSheet"> {
   message: ChatMessage | null;
   isPresented: boolean;
   onDismiss: () => void;
+  /** Replaces the default actions. Build on `buildDefaultMessageActions` to extend instead. */
   actions?: MessageAction[];
+  /** Emoji row; defaults to `DEFAULT_QUICK_REACTIONS` when `onReact` is wired, `[]` to hide. */
   quickReactions?: string[];
+  /** Content above the reactions — e.g. a preview of the pressed message. */
+  header?: ReactNode;
 }
 
 /**
- * Clean, high-performance modal sheet for message actions & quick reactions.
- * Built with pure React Native primitives (no experimental native-module dependencies).
+ * Bottom sheet of message actions and quick reactions. Render one per
+ * screen (not per row) and drive it from the pressed message.
+ *
+ * Slots: `backdrop`, `sheet`, `sectionTitle`, `reactionsRow`,
+ * `reactionButton`, `reactionEmoji`, `actions`, `actionButton`,
+ * `actionText`, `cancelButton`, `cancelText`. Item slots get `pressed`
+ * and `destructive`.
  */
 export function MessageActionsSheet({
   message,
@@ -64,15 +101,19 @@ export function MessageActionsSheet({
   onDismiss,
   actions: actionsOverride,
   quickReactions,
+  header,
+  styles: slotStyles,
+  classNames,
 }: MessageActionsSheetProps) {
-  const { actions: chatActions, state } = useChatUI();
+  const { actions: chatActions, state, config } = useChatUI();
   const theme = state.theme;
+  const { colors, radius, spacing, typography } = theme;
+  const slots = useSlots("MessageActionsSheet", { styles: slotStyles, classNames }, { pressed: false, destructive: false });
 
   if (!message) return null;
 
-  const resolvedActions = actionsOverride ?? buildDefaultMessageActions(message, chatActions);
-  const resolvedQuickReactions =
-    quickReactions ?? (chatActions.onReact ? DEFAULT_QUICK_REACTIONS : []);
+  const resolvedActions = actionsOverride ?? buildDefaultMessageActions(message, chatActions, config);
+  const resolvedQuickReactions = quickReactions ?? (chatActions.onReact && message.deletedAt === null ? DEFAULT_QUICK_REACTIONS : []);
 
   const runThenDismiss = (fn: () => void) => () => {
     fn();
@@ -82,109 +123,112 @@ export function MessageActionsSheet({
   if (resolvedActions.length === 0 && resolvedQuickReactions.length === 0) return null;
 
   return (
-    <Modal
-      visible={isPresented}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
-      <TouchableWithoutFeedback onPress={onDismiss}>
-        <View style={styles.backdrop}>
-          <TouchableWithoutFeedback>
-            <View
-              style={[
-                styles.sheet,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              {/* Quick Reactions Bar */}
-              {resolvedQuickReactions.length > 0 && (
-                <View style={styles.reactionsContainer}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.mutedForeground }]}>
-                    React
-                  </Text>
-                  <View style={styles.reactionsRow}>
-                    {resolvedQuickReactions.map((emoji) => (
-                      <Pressable
-                        key={emoji}
-                        style={({ pressed }) => [
-                          styles.reactionButton,
-                          {
-                            backgroundColor: pressed
-                              ? theme.colors.surface
-                              : theme.colors.background,
-                            borderColor: theme.colors.border,
-                          },
-                        ]}
-                        onPress={runThenDismiss(() =>
-                          chatActions.onReact?.(message.id, emoji),
-                        )}
-                      >
-                        <Text style={styles.reactionEmoji}>{emoji}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              )}
+    <Modal visible={isPresented} transparent animationType="fade" onRequestClose={onDismiss} statusBarTranslucent>
+      <View style={[styles.backdrop, { backgroundColor: colors.overlay }, slots.style("backdrop")]} {...slots.className("backdrop")}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} accessibilityLabel={config.labels.cancel} />
+        <View
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              borderTopLeftRadius: radius.lg + 2,
+              borderTopRightRadius: radius.lg + 2,
+              padding: spacing.lg,
+            },
+            slots.style("sheet"),
+          ]}
+          {...slots.className("sheet")}
+        >
+          {header}
 
-              {/* Action Buttons */}
-              <View style={styles.actionsContainer}>
-                {resolvedActions.map((action) => {
-                  const isDestructive = action.id === "delete";
-                  return (
-                    <Pressable
-                      key={action.id}
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        {
-                          backgroundColor: pressed
-                            ? theme.colors.surface
-                            : "transparent",
-                        },
-                      ]}
-                      onPress={runThenDismiss(action.onPress)}
-                    >
-                      <Text
-                        style={[
-                          styles.actionText,
-                          {
-                            color: isDestructive
-                              ? theme.colors.destructive
-                              : theme.colors.foreground,
-                          },
-                        ]}
-                      >
-                        {action.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              {/* Cancel Button */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.cancelButton,
-                  {
-                    backgroundColor: pressed
-                      ? theme.colors.surface
-                      : theme.colors.background,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-                onPress={onDismiss}
+          {resolvedQuickReactions.length > 0 && (
+            <View style={{ marginBottom: spacing.lg }}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.mutedForeground, marginBottom: spacing.sm }, fontStyle(theme, "semibold"), slots.style("sectionTitle")]}
+                {...slots.className("sectionTitle")}
               >
-                <Text style={[styles.cancelText, { color: theme.colors.mutedForeground }]}>
-                  Cancel
-                </Text>
-              </Pressable>
+                {config.labels.react}
+              </Text>
+              <View style={[styles.reactionsRow, slots.style("reactionsRow")]} {...slots.className("reactionsRow")}>
+                {resolvedQuickReactions.map((emoji) => (
+                  <Pressable
+                    key={emoji}
+                    accessibilityRole="button"
+                    accessibilityLabel={emoji}
+                    style={({ pressed }) => [
+                      styles.reactionButton,
+                      { backgroundColor: pressed ? colors.border : colors.surface, borderRadius: radius.full },
+                      slots.style("reactionButton", { pressed }),
+                    ]}
+                    onPress={runThenDismiss(() => {
+                      config.haptics("reaction");
+                      chatActions.onReact?.(message.id, emoji);
+                    })}
+                    {...slots.className("reactionButton")}
+                  >
+                    <Text style={[{ fontSize: typography.emoji }, slots.style("reactionEmoji")]} {...slots.className("reactionEmoji")}>
+                      {emoji}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </TouchableWithoutFeedback>
+          )}
+
+          {resolvedActions.length > 0 && (
+            <View
+              style={[styles.actions, { backgroundColor: colors.surface, borderRadius: radius.md, marginBottom: spacing.md }, slots.style("actions")]}
+              {...slots.className("actions")}
+            >
+              {resolvedActions.map((action, index) => {
+                const destructive = action.destructive ?? action.id === "delete";
+                const tint = destructive ? colors.destructive : colors.foreground;
+                return (
+                  <Pressable
+                    key={action.id}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      { paddingHorizontal: spacing.lg, backgroundColor: pressed ? colors.border : "transparent" },
+                      index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+                      slots.style("actionButton", { pressed, destructive }),
+                    ]}
+                    onPress={runThenDismiss(action.onPress)}
+                    {...slots.className("actionButton")}
+                  >
+                    <Text
+                      style={[{ color: tint, fontSize: typography.body, flex: 1 }, fontStyle(theme, "medium"), slots.style("actionText", { destructive })]}
+                      {...slots.className("actionText")}
+                    >
+                      {action.label}
+                    </Text>
+                    {typeof action.icon === "string" ? <ChatIcon name={action.icon as ChatIconName} size={18} color={tint} /> : action.icon}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.cancelButton,
+              { backgroundColor: pressed ? colors.border : colors.surface, borderRadius: radius.md },
+              slots.style("cancelButton", { pressed }),
+            ]}
+            onPress={onDismiss}
+            {...slots.className("cancelButton")}
+          >
+            <Text
+              style={[{ color: colors.foreground, fontSize: typography.body }, fontStyle(theme, "semibold"), slots.style("cancelText")]}
+              {...slots.className("cancelText")}
+            >
+              {config.labels.cancel}
+            </Text>
+          </Pressable>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 }
@@ -192,23 +236,15 @@ export function MessageActionsSheet({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
   },
   sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    paddingBottom: 32,
-  },
-  reactionsContainer: {
-    marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 0,
+    paddingBottom: 34,
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 8,
     textTransform: "uppercase",
   },
   reactionsRow: {
@@ -216,40 +252,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   reactionButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
+    width: 46,
+    height: 46,
     alignItems: "center",
     justifyContent: "center",
   },
-  reactionEmoji: {
-    fontSize: 22,
-  },
-  actionsContainer: {
-    borderRadius: 12,
+  actions: {
     overflow: "hidden",
-    marginBottom: 12,
   },
   actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: "500",
+    gap: 12,
   },
   cancelButton: {
     paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  cancelText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
 });
 
