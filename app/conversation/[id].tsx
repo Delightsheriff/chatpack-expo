@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useOptimisticMessages, useReceipts, useTyping } from "chatpack-expo/react";
 import type { ChatReceiptState } from "chatpack-expo-ui";
@@ -15,6 +15,25 @@ export default function ConversationScreen() {
   const { messages, sendMessage, loadMore } = useOptimisticMessages(chat, { conversationId: id, currentUserId: userId });
   const typing = useTyping(chat, { conversationId: id });
   const receipt = useReceipts(chat, { conversationId: id }) as ChatReceiptState | null;
+
+  // Mark the conversation read up to the newest server message while this
+  // screen is open — on open and again as new messages arrive. Clears the
+  // unread badge in the list and the tab bar, and sends the other side ✓✓.
+  const newestServerId = messages.find((m) => !m.isOptimistic)?.id;
+  const lastMarked = useRef<string | null>(null);
+  useEffect(() => {
+    if (!newestServerId || lastMarked.current === newestServerId) return;
+    lastMarked.current = newestServerId;
+    // Chatpack actions report failures in `error` rather than throwing; retry on the next change.
+    void chat.conversations
+      .markRead({ conversationId: id, messageId: newestServerId })
+      .then((result) => {
+        if (result.error) lastMarked.current = null;
+      })
+      .catch(() => {
+        lastMarked.current = null;
+      });
+  }, [chat, id, newestServerId]);
 
   const lastTypingAt = useRef(0);
   const handleTyping = useCallback(
